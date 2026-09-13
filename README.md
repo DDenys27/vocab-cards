@@ -12,7 +12,7 @@ Open `index.html` in a browser (double-click locally, or visit the published URL
 - On the back, click the underlined blank in the example sentence to reveal the hidden word.
 - Click the speaker icon (or press **P**) to hear the word pronounced.
 - Mark each card "Known ✓" or "Still learning" — progress is saved per browser (localStorage).
-- Filter by status and by date-added; shuffle the deck anytime.
+- Filter by status and by topic (All / Career / ...); shuffle the deck anytime.
 - Scroll down for a searchable table of every word in your deck.
 - Use **Practice** in the top bar to write your own sentences and have Claude check them.
 - Use **Add words** in the top bar to add new words yourself, no Claude Code needed (see below).
@@ -30,7 +30,7 @@ This app is shared by two people, each with their own private-ish word list — 
 
 Two ways to do this:
 
-**1. In the app itself (Add words tab)** — paste raw notes as one block of text, and/or upload or paste (⌘V) a screenshot/photo of the word list, then click **Generate cards**. Claude (via your own Anthropic API key, entered once under "API settings" — shared with the Practice page) reads it and proposes structured cards; review the list, remove any mistakes, and click **Add N words to my deck**.
+**1. In the app itself (Add words tab)** — paste raw notes as one block of text, and/or upload or paste (⌘V) a screenshot/photo of the word list, choose an existing **topic** or type a new one, then click **Generate cards**. Claude (via your own Anthropic API key, entered once under "API settings" — shared with the Practice page) reads it and proposes structured cards, all tagged with that topic; review the list, remove any mistakes, and click **Add N words to my deck**.
 
   Important limitation: these words are saved in **this browser's localStorage only**. They show up immediately on this device, but they are *not* written back into the `data-account*.js` files on GitHub — so they won't appear on your other devices or your partner's copy until you ask Claude (in a chat session) to fold them into the real file. Think of it as a personal scratch layer on top of the shared deck.
 
@@ -45,11 +45,12 @@ Card format (either way):
   definition: "open to more than one interpretation; not having one obvious meaning",
   example: "The contract's wording was ____ enough to cause a dispute between the two companies.",
   synonyms: ["vague", "equivocal", "unclear", "ambiguity (n)"],
+  topic: "Language & Communication",
   dateAdded: "2026-09-12"
 }
 ```
 
-`____` (4+ underscores) in the example marks the word to hide/reveal on the card back.
+`____` (4+ underscores) in the example marks the word to hide/reveal on the card back. `topic` powers the topic filter chips (All / Everyday Expressions / Health & Body / ...) — reuse an existing topic name across cards to group them, or invent a new one.
 
 For an account with `translateTo` set (like Mariia's), add a `translation` field too — it shows as a bold highlighted line on the card back, in the word table, and as a practice hint.
 

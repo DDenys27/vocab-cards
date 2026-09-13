@@ -15,7 +15,8 @@
 //   translation: "Ukrainian translation of the word",
 //   example: "A full example sentence with the target word replaced by ____",
 //   synonyms: ["optional", "related words or forms"],
-//   dateAdded: "YYYY-MM-DD"   // the day this card was added — powers the date filter
+//   topic: "a topic name — powers the topic filter; reuse an existing one where it fits",
+//   dateAdded: "YYYY-MM-DD"   // the day this card was added (kept for reference)
 // }
 
 const VOCAB_DATA = [
@@ -26,6 +27,7 @@ const VOCAB_DATA = [
     translation: "лікар",
     example: "My sister wants to be a ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -35,6 +37,7 @@ const VOCAB_DATA = [
     translation: "медсестра / медбрат",
     example: "The ____ gave me my medicine.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -44,6 +47,7 @@ const VOCAB_DATA = [
     translation: "актор / акторка",
     example: "He is a famous ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -53,6 +57,7 @@ const VOCAB_DATA = [
     translation: "поліцейський / поліцейська",
     example: "The ____ stopped the car.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -62,6 +67,7 @@ const VOCAB_DATA = [
     translation: "продавець / продавчиня",
     example: "The ____ helped me find a jacket.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -71,6 +77,7 @@ const VOCAB_DATA = [
     translation: "співак / співачка",
     example: "She is a very good ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -80,6 +87,7 @@ const VOCAB_DATA = [
     translation: "інженер / інженерка",
     example: "My father is an ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -89,6 +97,7 @@ const VOCAB_DATA = [
     translation: "юрист / адвокат",
     example: "I need to talk to a ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -98,6 +107,7 @@ const VOCAB_DATA = [
     translation: "пілот / пілотка",
     example: "The ____ landed the plane safely.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -107,6 +117,7 @@ const VOCAB_DATA = [
     translation: "політик / політикиня",
     example: "The ____ gave a speech.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -116,6 +127,7 @@ const VOCAB_DATA = [
     translation: "науковець / науковиця",
     example: "The ____ works in a laboratory.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -125,6 +137,7 @@ const VOCAB_DATA = [
     translation: "письменник / письменниця",
     example: "She is a famous ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -134,6 +147,7 @@ const VOCAB_DATA = [
     translation: "цифровий дизайнер / дизайнерка",
     example: "He works as a ____.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -143,6 +157,7 @@ const VOCAB_DATA = [
     translation: "на пенсії",
     example: "My grandmother is ____ now.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   },
   {
@@ -152,6 +167,7 @@ const VOCAB_DATA = [
     translation: "безробітний / безробітна",
     example: "He has been ____ for three months.",
     synonyms: [],
+    topic: "Career",
     dateAdded: "2026-09-13"
   }
 ];

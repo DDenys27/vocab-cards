@@ -198,6 +198,12 @@
     </div>
   </div>
 
+  <div class="field-block">
+    <label class="field-label" for="topicSelect">Topic for this set of words</label>
+    <select id="topicSelect"></select>
+    <input type="text" id="newTopicInput" placeholder="Name your new topic (e.g. Travel & Journeys)" hidden style="margin-top:8px;">
+  </div>
+
   <button class="primary-btn" id="generateBtn" style="width:100%;margin-top:18px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
     Generate cards
@@ -250,6 +256,7 @@ function initApp(){
   });
 
   const accountId = window.currentAccountId ? window.currentAccountId() : null;
+  const DECK = window.vocabMergedDeck ? window.vocabMergedDeck(VOCAB_DATA, accountId) : VOCAB_DATA;
 
   const KEY_STORAGE = "vocabapp_anthropic_key";
   const MODEL_STORAGE = "vocabapp_anthropic_model";
@@ -261,6 +268,8 @@ function initApp(){
   const imagePreviewThumb = document.getElementById("imagePreviewThumb");
   const imagePreviewName = document.getElementById("imagePreviewName");
   const removeImageBtn = document.getElementById("removeImageBtn");
+  const topicSelect = document.getElementById("topicSelect");
+  const newTopicInput = document.getElementById("newTopicInput");
   const generateBtn = document.getElementById("generateBtn");
   const genStatus = document.getElementById("genStatus");
   const previewList = document.getElementById("previewList");
@@ -275,6 +284,37 @@ function initApp(){
     return String(s).replace(/[&<>"']/g, c => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
     }[c]));
+  }
+
+  // ---------- topic (choose existing or create new) ----------
+  const NEW_TOPIC_VALUE = "__new__";
+
+  function populateTopicSelect(){
+    const topics = Array.from(new Set(DECK.map(c => c.topic).filter(Boolean))).sort();
+    const options = topics.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")
+      + `<option value="${NEW_TOPIC_VALUE}">+ New topic…</option>`;
+    topicSelect.innerHTML = options;
+    if(topics.length){
+      topicSelect.value = topics[0];
+      newTopicInput.hidden = true;
+    } else {
+      topicSelect.value = NEW_TOPIC_VALUE;
+      newTopicInput.hidden = false;
+    }
+  }
+  populateTopicSelect();
+
+  topicSelect.addEventListener("change", () => {
+    const isNew = topicSelect.value === NEW_TOPIC_VALUE;
+    newTopicInput.hidden = !isNew;
+    if(isNew) newTopicInput.focus();
+  });
+
+  function resolveTopic(){
+    if(topicSelect.value === NEW_TOPIC_VALUE){
+      return newTopicInput.value.trim();
+    }
+    return topicSelect.value;
   }
 
   // ---------- settings (shared with Practice page) ----------
@@ -410,6 +450,13 @@ function initApp(){
       showStatus("error", "Paste some text or add an image first.");
       return;
     }
+    const topic = resolveTopic();
+    if(!topic){
+      showStatus("error", "Choose a topic, or type a name for a new one, first.");
+      newTopicInput.hidden = false;
+      newTopicInput.focus();
+      return;
+    }
 
     generateBtn.disabled = true;
     const originalLabel = generateBtn.innerHTML;
@@ -486,10 +533,12 @@ function initApp(){
         throw new Error("The model's reply wasn't valid JSON, so it couldn't be read as a card list. Try again, or simplify the input.");
       }
 
+      generatedCards.forEach(c => { c.topic = topic; });
+
       if(generatedCards.length === 0){
         showStatus("error", "Couldn't find any words in that. Try pasting clearer text or a sharper screenshot.");
       } else {
-        showStatus("done", `Found <strong>${generatedCards.length}</strong> word${generatedCards.length === 1 ? "" : "s"}. Review below, remove any mistakes, then save.`);
+        showStatus("done", `Found <strong>${generatedCards.length}</strong> word${generatedCards.length === 1 ? "" : "s"} for <strong>${escapeHtml(topic)}</strong>. Review below, remove any mistakes, then save.`);
         renderPreview();
       }
     }catch(err){
@@ -506,6 +555,8 @@ function initApp(){
     const toSave = generatedCards.filter(c => !c._removed).map(({ _removed, ...rest }) => rest);
     if(toSave.length === 0) return;
     if(window.vocabAddCustomCards) window.vocabAddCustomCards(accountId, toSave);
+    DECK.push(...toSave);
+    populateTopicSelect();
 
     textInput.value = "";
     removeImageBtn.click();

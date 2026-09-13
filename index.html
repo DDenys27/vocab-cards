@@ -49,10 +49,13 @@
     align-items:center;
     justify-content:space-between;
   }
-  .date-badge{
-    color:var(--label-tertiary);
-    font-size:0.72rem;
-    font-weight:500;
+  .topic-badge{
+    background:var(--fill-secondary);
+    color:var(--label-secondary);
+    font-size:0.68rem;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:999px;
   }
   .front-body{
     flex:1;
@@ -276,7 +279,7 @@
     font-weight:700;
     white-space:nowrap;
   }
-  table.word-table .table-date{
+  table.word-table .table-topic{
     color:var(--label-tertiary);
     font-weight:500;
     white-space:nowrap;
@@ -321,7 +324,7 @@
       <button data-value="learning">Learning</button>
       <button data-value="known">Known</button>
     </div>
-    <div class="date-row" id="dateRow"></div>
+    <div class="date-row" id="topicRow"></div>
   </div>
 </div>
 
@@ -419,13 +422,6 @@ function initApp(){
   }
   function statusOf(word){ return progress[word] || "new"; }
 
-  function formatDate(iso){
-    if(!iso) return "";
-    const d = new Date(iso + "T00:00:00");
-    if(isNaN(d)) return iso;
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  }
-
   const speakerIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>`;
 
   const speechSupported = "speechSynthesis" in window;
@@ -464,7 +460,7 @@ function initApp(){
 
   let order = DECK.map((_, i) => i);
   let statusFilter = "all";
-  let dateFilter = "all";
+  let topicFilter = "all";
   let pos = 0;
   let flipped = false;
 
@@ -475,22 +471,22 @@ function initApp(){
   const knownCountEl = document.getElementById("knownCount");
   const statusSegmented = document.getElementById("statusSegmented");
   const statusThumb = document.getElementById("statusThumb");
-  const dateRow = document.getElementById("dateRow");
+  const topicRow = document.getElementById("topicRow");
 
-  const uniqueDates = Array.from(new Set(DECK.map(c => c.dateAdded).filter(Boolean))).sort().reverse();
+  const uniqueTopics = Array.from(new Set(DECK.map(c => c.topic).filter(Boolean))).sort();
 
-  function buildDateChips(){
-    const chips = [{ value: "all", label: "All dates" }]
-      .concat(uniqueDates.map(d => ({ value: d, label: formatDate(d) })));
-    dateRow.innerHTML = chips.map(c =>
-      `<button class="chip-btn${c.value === dateFilter ? " active" : ""}" data-value="${c.value}">${c.label}</button>`
+  function buildTopicChips(){
+    const chips = [{ value: "all", label: "All" }]
+      .concat(uniqueTopics.map(t => ({ value: t, label: t })));
+    topicRow.innerHTML = chips.map(c =>
+      `<button class="chip-btn${c.value === topicFilter ? " active" : ""}" data-value="${escapeHtml(c.value)}">${escapeHtml(c.label)}</button>`
     ).join("");
-    dateRow.querySelectorAll(".chip-btn").forEach(btn => {
+    topicRow.querySelectorAll(".chip-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        dateFilter = btn.dataset.value;
+        topicFilter = btn.dataset.value;
         pos = 0;
         flipped = false;
-        buildDateChips();
+        buildTopicChips();
         render();
       });
     });
@@ -507,7 +503,7 @@ function initApp(){
     return order.filter(i => {
       const card = DECK[i];
       if(statusFilter !== "all" && statusOf(card.word) !== statusFilter) return false;
-      if(dateFilter !== "all" && card.dateAdded !== dateFilter) return false;
+      if(topicFilter !== "all" && card.topic !== topicFilter) return false;
       return true;
     });
   }
@@ -556,7 +552,7 @@ function initApp(){
     faceFront.innerHTML = `
       <div class="front-head">
         <span class="pos-badge">${escapeHtml(card.pos || "")}</span>
-        <span class="date-badge">${formatDate(card.dateAdded)}</span>
+        <span class="topic-badge">${escapeHtml(card.topic || "")}</span>
       </div>
       <div class="front-body">
         <div class="word">${escapeHtml(card.word)}</div>
@@ -632,7 +628,7 @@ function initApp(){
   const tableSearch = document.getElementById("tableSearch");
   const sortedForTable = DECK
     .map((c, i) => ({ ...c, _i: i }))
-    .sort((a, b) => (b.dateAdded || "").localeCompare(a.dateAdded || "") || a._i - b._i);
+    .sort((a, b) => (a.topic || "").localeCompare(b.topic || "") || a.word.localeCompare(b.word));
 
   function renderTable(){
     const q = tableSearch.value.trim().toLowerCase();
@@ -657,7 +653,7 @@ function initApp(){
         : "";
       return `
         <tr>
-          <td class="word-cell">${escapeHtml(c.word)}<div class="table-date">${formatDate(c.dateAdded)}</div></td>
+          <td class="word-cell">${escapeHtml(c.word)}<div class="table-topic">${escapeHtml(c.topic || "")}</div></td>
           <td><span class="pos-badge">${escapeHtml(c.pos || "")}</span></td>
           <td>
             <div class="definition">${escapeHtml(c.definition)}</div>
@@ -742,7 +738,7 @@ function initApp(){
     }
   });
 
-  buildDateChips();
+  buildTopicChips();
   moveStatusThumb();
   render();
   renderTable();
