@@ -73,6 +73,12 @@
     line-height:1.2;
     letter-spacing:-0.02em;
   }
+  .word-icon{
+    width:64px;
+    height:64px;
+    color:var(--blue);
+    margin-bottom:2px;
+  }
   .speak-btn{
     width:40px;
     height:40px;
@@ -303,6 +309,7 @@
 <script src="accounts.js"></script>
 <script src="auth.js"></script>
 <script src="words-store.js"></script>
+<script src="icons.js"></script>
 
 <div class="topbar">
   <div class="topbar-inner">
@@ -555,6 +562,7 @@ function initApp(){
         <span class="topic-badge">${escapeHtml(card.topic || "")}</span>
       </div>
       <div class="front-body">
+        ${card.icon && typeof ICONS !== "undefined" && ICONS[card.icon] ? `<svg class="word-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[card.icon]}</svg>` : ""}
         <div class="word">${escapeHtml(card.word)}</div>
         <button class="speak-btn" id="speakFrontBtn" title="Pronounce (P)">${speakerIcon}</button>
       </div>

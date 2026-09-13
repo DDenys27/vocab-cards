@@ -54,6 +54,8 @@ Card format (either way):
 
 For an account with `translateTo` set (like Mariia's), add a `translation` field too — it shows as a bold highlighted line on the card back, in the word table, and as a practice hint.
 
+Add an `icon: "someKey"` field to show a hand-drawn picture on the card front (great for lower-level learners) — `someKey` must match an entry in `icons.js`. These are hand-authored line icons, not something Claude generates automatically via Add Words, so a new word either reuses an existing icon key that fits, gets a new one you ask Claude to draw in a chat session, or is simply left without a picture (the card still works fine, it just won't show one).
+
 ## Files
 
 - `index.html` — flashcards + word table
@@ -63,6 +65,7 @@ For an account with `translateTo` set (like Mariia's), add a `translation` field
 - `accounts.js` — profile names/PINs (edit this)
 - `auth.js` — shared lock-screen + per-account data loading
 - `words-store.js` — shared local "custom cards" storage used by Add words
+- `icons.js` — hand-drawn line icons shown on cards that have an `icon` field
 - `data-account1.js` / `data-account2.js` — each profile's seed word list
 
 ## Publishing (GitHub Pages)
