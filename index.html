@@ -179,6 +179,38 @@
   .mark-btn.learning{background:var(--orange-tint);color:var(--orange);}
   .mark-btn.known{background:var(--green-tint);color:var(--green);}
 
+  /* ---------- page nav buttons (between cards and table) ---------- */
+  .page-nav-wrap{
+    width:100%;
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 16px 0;
+  }
+  @media (min-width:640px){
+    .page-nav-wrap{max-width:560px;}
+  }
+  .page-nav-row{
+    display:flex;
+    gap:12px;
+  }
+  .page-nav-btn{
+    flex:1;
+    height:56px;
+    border-radius:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    font-size:1rem;
+    font-weight:700;
+    text-decoration:none;
+    box-shadow:var(--shadow);
+  }
+  .page-nav-btn svg{width:20px;height:20px;}
+  .page-nav-btn.add-words{background:var(--green);color:#fff;}
+  .page-nav-btn.practice{background:var(--blue);color:#fff;}
+  .page-nav-btn:active{transform:scale(0.97);}
+
   /* ---------- word list table ---------- */
   .table-wrap{
     width:100%;
@@ -274,11 +306,6 @@
       <div class="stats">
         <span class="pill learning" id="learningCount">0 learning</span>
         <span class="pill known" id="knownCount">0 known</span>
-        <a class="nav-link" href="add-words.html">Add words</a>
-        <a class="nav-link" href="practice.html">
-          Practice
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-        </a>
       </div>
     </div>
     <div class="segmented" id="statusSegmented">
@@ -335,6 +362,19 @@
         Reset progress
       </button>
     </div>
+  </div>
+</div>
+
+<div class="page-nav-wrap">
+  <div class="page-nav-row">
+    <a class="page-nav-btn add-words" href="add-words.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add words
+    </a>
+    <a class="page-nav-btn practice" href="practice.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>
+      Practice
+    </a>
   </div>
 </div>
 
