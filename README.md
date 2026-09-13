@@ -20,9 +20,9 @@ Open `index.html` in a browser (double-click locally, or visit the published URL
 
 ## Two profiles
 
-This app is shared by two people, each with their own private-ish word list:
+This app is shared by two people, each with their own private-ish word list — currently **Denys** (B2-C1) and **Mariia** (A1-A2):
 
-- **`accounts.js`** — edit this to set each person's real name and PIN. Comments in the file explain the (limited) security model: this is a static site with no server, so the PIN is a "pick your own list" gate, not real security — anyone using dev tools can see both lists' data.
+- **`accounts.js`** — edit this to set each person's real name, PIN, level (`B2-C1`, `A1-A2`, ...), and optionally `translateTo` (a language — when set, that profile's cards get a `translation` field, and Add Words asks Claude to include translations for new words too). Comments in the file explain the (limited) security model: this is a static site with no server, so the PIN is a "pick your own list" gate, not real security — anyone using dev tools can see both lists' data.
 - **`data-account1.js`** / **`data-account2.js`** — each person's own seed deck, same format as before.
 - **`auth.js`** — the shared lock-screen logic. You shouldn't need to touch this.
 
@@ -50,6 +50,8 @@ Card format (either way):
 ```
 
 `____` (4+ underscores) in the example marks the word to hide/reveal on the card back.
+
+For an account with `translateTo` set (like Mariia's), add a `translation` field too — it shows as a bold highlighted line on the card back, in the word table, and as a practice hint.
 
 ## Files
 

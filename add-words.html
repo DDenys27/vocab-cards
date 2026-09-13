@@ -362,6 +362,7 @@ function initApp(){
       word: String(item.word || "").trim(),
       pos: String(item.pos || "").trim(),
       definition: String(item.definition || "").trim(),
+      translation: item.translation ? String(item.translation).trim() : "",
       example: String(item.example || "").trim(),
       synonyms: Array.isArray(item.synonyms) ? item.synonyms.filter(Boolean).map(String) : [],
       dateAdded: today
@@ -379,6 +380,7 @@ function initApp(){
         <div class="preview-body">
           <div class="preview-word">${escapeHtml(c.word)} <span class="pos-badge" style="margin-left:4px;">${escapeHtml(c.pos)}</span></div>
           <div class="preview-def">${escapeHtml(c.definition)}</div>
+          ${c.translation ? `<div class="preview-def" style="font-weight:700;color:var(--blue);">${escapeHtml(c.translation)}</div>` : ""}
         </div>
         <button type="button" class="remove-x" data-i="${i}" title="${c._removed ? "Restore" : "Remove"}">${c._removed ? "↺" : "×"}</button>
       </div>
@@ -418,11 +420,16 @@ function initApp(){
     generatedCards = [];
 
     const model = localStorage.getItem(MODEL_STORAGE) || "claude-opus-5";
-    const systemPrompt = "You convert an English tutor's raw notes (text and/or a photo/screenshot of a word list) into structured vocabulary flashcards for a B2-C1 English learner.\n"
+    const account = (typeof ACCOUNTS !== "undefined" ? ACCOUNTS : []).find(a => a.id === accountId) || {};
+    const level = account.level || "B2-C1";
+    const translateTo = account.translateTo || null;
+
+    const systemPrompt = `You convert an English tutor's raw notes (text and/or a photo/screenshot of a word list) into structured vocabulary flashcards for a ${level} English learner.\n`
       + "For each distinct word or phrase you find, produce one JSON object with exactly these fields:\n"
       + "- word: the headword or phrase in its natural form (e.g. \"to make up one's mind\", \"ambiguous\")\n"
       + "- pos: part of speech (noun, verb, adjective, adverb, phrase, idiom, phrasal verb, verb phrase, etc.)\n"
-      + "- definition: a clear, simple English definition (not a translation)\n"
+      + `- definition: a clear, simple English definition, written at a ${level} reading level (not a translation)\n`
+      + (translateTo ? `- translation: the word/phrase translated into ${translateTo}\n` : "")
       + "- example: one natural example sentence using the word, with the target word/phrase replaced by exactly four underscores (____)\n"
       + "- synonyms: an array of 0-4 related words, synonyms, or forms (can be an empty array)\n"
       + "Return ONLY a JSON array of these objects — no markdown code fences, no explanation, no extra text before or after.";

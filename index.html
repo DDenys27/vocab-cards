@@ -130,6 +130,12 @@
     margin-bottom:3px;
   }
   .definition{font-size:0.96rem;line-height:1.42;}
+  .translation{
+    font-size:1rem;
+    font-weight:700;
+    color:var(--blue);
+    line-height:1.4;
+  }
   .example{font-size:0.94rem;line-height:1.5;}
   .blank{
     display:inline-block;
@@ -566,6 +572,13 @@ function initApp(){
          </div>`
       : "";
 
+    const translationHtml = card.translation
+      ? `<div class="row">
+           <div class="section-label">Translation</div>
+           <div class="translation">${escapeHtml(card.translation)}</div>
+         </div>`
+      : "";
+
     faceBack.innerHTML = `
       <div class="word-small-row">
         <div class="word-small">${escapeHtml(card.word)} <span class="pos-inline">— ${escapeHtml(card.pos || "")}</span></div>
@@ -576,6 +589,7 @@ function initApp(){
           <div class="section-label">Definition</div>
           <div class="definition">${escapeHtml(card.definition)}</div>
         </div>
+        ${translationHtml}
         <div class="row">
           <div class="section-label">Example</div>
           <div class="example">${renderExample(card.example || "")}</div>
@@ -638,12 +652,16 @@ function initApp(){
       const synonymsHtml = (c.synonyms && c.synonyms.length)
         ? `<div class="synonyms">${c.synonyms.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join("")}</div>`
         : "";
+      const translationHtml = c.translation
+        ? `<div class="translation">${escapeHtml(c.translation)}</div>`
+        : "";
       return `
         <tr>
           <td class="word-cell">${escapeHtml(c.word)}<div class="table-date">${formatDate(c.dateAdded)}</div></td>
           <td><span class="pos-badge">${escapeHtml(c.pos || "")}</span></td>
           <td>
             <div class="definition">${escapeHtml(c.definition)}</div>
+            ${translationHtml}
             <div class="table-example">${fillExample(c.example, c.word)}</div>
             ${synonymsHtml}
           </td>

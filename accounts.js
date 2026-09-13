@@ -9,8 +9,13 @@
 //
 // `dataFile` must point at a data-*.js file in this same folder (see
 // data-account1.js / data-account2.js for the format).
+//
+// `translateTo` (optional) — when set, cards for this account carry a
+// `translation` field in that language, and the "Add words" page asks Claude
+// to include translations for any new words too. Meant for a lower-level
+// learner (A1-A2) who needs more support than an English-only definition.
 
 const ACCOUNTS = [
-  { id: "account1", label: "Denys", pin: "1234", dataFile: "data-account1.js" },
-  { id: "account2", label: "Partner", pin: "5678", dataFile: "data-account2.js" }
+  { id: "account1", label: "Denys", pin: "1234", dataFile: "data-account1.js", level: "B2-C1" },
+  { id: "account2", label: "Mariia", pin: "5678", dataFile: "data-account2.js", level: "A1-A2", translateTo: "Ukrainian" }
 ];
