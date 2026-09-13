@@ -472,7 +472,12 @@ function initApp(){
 
       const data = await res.json();
       const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
-      generatedCards = parseCardsFromResponse(text);
+
+      try{
+        generatedCards = parseCardsFromResponse(text);
+      }catch(parseErr){
+        throw new Error("The model's reply wasn't valid JSON, so it couldn't be read as a card list. Try again, or simplify the input.");
+      }
 
       if(generatedCards.length === 0){
         showStatus("error", "Couldn't find any words in that. Try pasting clearer text or a sharper screenshot.");
@@ -481,7 +486,7 @@ function initApp(){
         renderPreview();
       }
     }catch(err){
-      showStatus("error", "Couldn't generate cards: " + (err.message || "something went wrong") + ". The model's reply may not have been valid JSON — try again.");
+      showStatus("error", "Couldn't generate cards: " + (err.message || "something went wrong"));
     }finally{
       generateBtn.disabled = false;
       generateBtn.innerHTML = originalLabel;
