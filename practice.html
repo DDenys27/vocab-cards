@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Practice Sentences</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .prompt-card{
+    width:100%;
+    background:var(--card-bg);
+    border:0.5px solid var(--hairline-soft);
+    border-radius:26px;
+    box-shadow:var(--shadow);
+    padding:22px 24px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .prompt-word{
+    font-size:1.8rem;
+    font-weight:700;
+    letter-spacing:-0.02em;
+    text-align:center;
+  }
+  .speak-btn{
+    width:38px;
+    height:38px;
+    border-radius:999px;
+    border:none;
+    background:var(--blue-tint);
+    color:var(--blue);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .speak-btn svg{width:18px;height:18px;}
+  .speak-btn.unsupported{display:none;}
+
+  details.hint-details{
+    width:100%;
+  }
+  details.hint-details summary{
+    cursor:pointer;
+    font-size:0.8rem;
+    font-weight:600;
+    color:var(--blue);
+    list-style:none;
+    text-align:center;
+  }
+  details.hint-details summary::-webkit-details-marker{display:none;}
+  .hint-content{
+    margin-top:10px;
+    padding:12px 14px;
+    background:var(--fill-tertiary);
+    border-radius:12px;
+    font-size:0.86rem;
+    line-height:1.4;
+    color:var(--label-secondary);
+  }
+  .hint-content .synonyms{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+
+  .picker-row{
+    width:100%;
+    display:flex;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .picker-row select{flex:1;}
+
+  .field-block{margin-bottom:14px;}
+  .field-block:last-child{margin-bottom:0;}
+
+  #checkBtn svg{width:17px;height:17px;}
+
+  .result-panel{
+    width:100%;
+    margin-top:16px;
+    padding:16px 18px;
+    border-radius:18px;
+    background:var(--fill-tertiary);
+  }
+  .result-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:0.8rem;
+    font-weight:700;
+    padding:4px 12px;
+    border-radius:999px;
+    margin-bottom:10px;
+  }
+  .result-badge svg{width:15px;height:15px;}
+  .result-badge.correct{background:var(--green-tint);color:var(--green);}
+  .result-badge.incorrect{background:var(--orange-tint);color:var(--orange);}
+  .result-badge.error{background:var(--red-tint);color:var(--red);}
+  .result-corrected{
+    background:var(--card-bg);
+    border-radius:12px;
+    padding:10px 13px;
+    font-size:0.92rem;
+    margin-bottom:10px;
+    border:0.5px solid var(--hairline-soft);
+  }
+  .result-corrected .label{
+    font-size:0.66rem;
+    font-weight:700;
+    color:var(--label-tertiary);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    display:block;
+    margin-bottom:4px;
+  }
+  .result-feedback{
+    font-size:0.9rem;
+    line-height:1.45;
+  }
+  .spinner{
+    width:16px;height:16px;
+    border-radius:999px;
+    border:2px solid rgba(255,255,255,0.5);
+    border-top-color:#fff;
+    animation:spin 0.7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  details.settings-details{
+    width:100%;
+    margin-top:28px;
+    border-top:0.5px solid var(--hairline-soft);
+    padding-top:16px;
+  }
+  details.settings-details summary{
+    cursor:pointer;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--label-secondary);
+    list-style:none;
+  }
+  details.settings-details summary::-webkit-details-marker{display:none;}
+  .settings-body{margin-top:14px;}
+  .settings-note{
+    font-size:0.76rem;
+    color:var(--label-tertiary);
+    line-height:1.4;
+    margin:6px 0 0;
+  }
+  .settings-note a{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<script src="accounts.js"></script>
+<script src="auth.js"></script>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="title-row">
+      <h1>🗣️ Practice</h1>
+      <div class="stats">
+        <span class="profile-label" id="profileLabel"></span>
+        <a class="nav-link" href="#" id="switchProfileBtn">Switch</a>
+        <a class="nav-link" href="index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          Cards
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="prompt-card">
+    <div class="pos-badge" id="promptPos"></div>
+    <div class="prompt-word" id="promptWord"></div>
+    <button class="speak-btn" id="speakBtn" title="Pronounce">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+    </button>
+    <details class="hint-details">
+      <summary>Need a hint?</summary>
+      <div class="hint-content" id="hintContent"></div>
+    </details>
+  </div>
+
+  <div class="picker-row">
+    <button class="util-btn" id="randomBtn" style="flex:0 0 auto;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4M3 7h9c2 0 3 1 4 3M21 17l-4 4-4-4M21 17h-9c-2 0-3-1-4-3"/></svg>
+      New word
+    </button>
+    <select id="wordSelect"></select>
+  </div>
+
+  <div class="field-block">
+    <label class="field-label" for="sentenceInput">Write a sentence using this word or phrase</label>
+    <textarea id="sentenceInput" placeholder="Type your sentence here…"></textarea>
+  </div>
+
+  <button class="primary-btn" id="checkBtn" style="width:100%;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    Check my sentence
+  </button>
+
+  <div class="result-panel" id="resultPanel" hidden></div>
+
+  <details class="settings-details" id="settingsDetails">
+    <summary>⚙️ API settings</summary>
+    <div class="settings-body">
+      <div class="field-block">
+        <label class="field-label" for="apiKeyInput">Anthropic API key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+        <p class="settings-note">
+          Stored only in this browser (localStorage) and sent directly from your device to Anthropic's API — never through any third party.
+          Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>.
+        </p>
+      </div>
+      <div class="field-block">
+        <label class="field-label" for="modelSelect">Model</label>
+        <select id="modelSelect">
+          <option value="claude-opus-5">Claude Opus 5 — best quality</option>
+          <option value="claude-sonnet-5">Claude Sonnet 5 — balanced</option>
+          <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest &amp; cheapest</option>
+        </select>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+function initApp(){
+  document.getElementById("profileLabel").textContent = window.currentAccountLabel ? window.currentAccountLabel() : "";
+  document.getElementById("switchProfileBtn").addEventListener("click", (e) => {
+    e.preventDefault();
+    if(window.switchProfile) window.switchProfile();
+  });
+
+  const KEY_STORAGE = "vocabapp_anthropic_key";
+  const MODEL_STORAGE = "vocabapp_anthropic_model";
+
+  const promptPos = document.getElementById("promptPos");
+  const promptWord = document.getElementById("promptWord");
+  const hintContent = document.getElementById("hintContent");
+  const wordSelect = document.getElementById("wordSelect");
+  const randomBtn = document.getElementById("randomBtn");
+  const speakBtn = document.getElementById("speakBtn");
+  const sentenceInput = document.getElementById("sentenceInput");
+  const checkBtn = document.getElementById("checkBtn");
+  const resultPanel = document.getElementById("resultPanel");
+  const apiKeyInput = document.getElementById("apiKeyInput");
+  const modelSelect = document.getElementById("modelSelect");
+  const settingsDetails = document.getElementById("settingsDetails");
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // ---------- speech ----------
+  const speechSupported = "speechSynthesis" in window;
+  let englishVoice = null;
+  function pickVoice(){
+    if(!speechSupported) return;
+    const voices = window.speechSynthesis.getVoices();
+    englishVoice = voices.find(v => /en[-_]US/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || null;
+  }
+  if(speechSupported){
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  } else {
+    speakBtn.classList.add("unsupported");
+  }
+  function speechTextFor(word){
+    return word.replace(/\(.*?\)/g, "").replace(/\//g, " or ")
+      .replace(/\bsth\b/g, "something").replace(/\bsb\b/g, "somebody")
+      .replace(/\s+/g, " ").trim();
+  }
+  function speak(word){
+    if(!speechSupported) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(speechTextFor(word));
+    utterance.lang = "en-US";
+    utterance.rate = 0.92;
+    if(englishVoice) utterance.voice = englishVoice;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // ---------- word selection ----------
+  if(VOCAB_DATA.length === 0){
+    document.querySelector(".content").innerHTML = `<div class="empty-state" style="padding:60px 20px;text-align:center;color:var(--label-tertiary);">No words in this deck yet.<br>Add some on the Cards page first.</div>`;
+    return;
+  }
+
+  const alphabetical = VOCAB_DATA.map((c, i) => ({ ...c, _i: i })).sort((a, b) => a.word.localeCompare(b.word));
+  wordSelect.innerHTML = alphabetical.map(c => `<option value="${c._i}">${escapeHtml(c.word)}</option>`).join("");
+
+  let currentIndex = Math.floor(Math.random() * VOCAB_DATA.length);
+
+  function showWord(index){
+    currentIndex = index;
+    const card = VOCAB_DATA[index];
+    promptPos.textContent = card.pos || "";
+    promptWord.textContent = card.word;
+    wordSelect.value = String(index);
+
+    const synonymsHtml = (card.synonyms && card.synonyms.length)
+      ? `<div class="synonyms">${card.synonyms.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join("")}</div>`
+      : "";
+    hintContent.innerHTML = `${escapeHtml(card.definition)}${synonymsHtml}`;
+
+    resultPanel.hidden = true;
+    sentenceInput.value = "";
+    document.querySelectorAll("details.hint-details").forEach(d => d.open = false);
+  }
+
+  function randomWord(){
+    if(VOCAB_DATA.length <= 1){ showWord(0); return; }
+    let next;
+    do { next = Math.floor(Math.random() * VOCAB_DATA.length); } while(next === currentIndex);
+    showWord(next);
+  }
+
+  randomBtn.addEventListener("click", randomWord);
+  wordSelect.addEventListener("change", () => showWord(Number(wordSelect.value)));
+  speakBtn.addEventListener("click", () => speak(VOCAB_DATA[currentIndex].word));
+
+  // ---------- settings ----------
+  apiKeyInput.value = localStorage.getItem(KEY_STORAGE) || "";
+  modelSelect.value = localStorage.getItem(MODEL_STORAGE) || "claude-opus-5";
+  if(!apiKeyInput.value) settingsDetails.open = true;
+
+  apiKeyInput.addEventListener("change", () => {
+    try{ localStorage.setItem(KEY_STORAGE, apiKeyInput.value.trim()); }catch(e){}
+  });
+  modelSelect.addEventListener("change", () => {
+    try{ localStorage.setItem(MODEL_STORAGE, modelSelect.value); }catch(e){}
+  });
+
+  // ---------- checking with Claude ----------
+  const checkIcon = checkBtn.innerHTML;
+
+  function parseFeedback(raw){
+    const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+    let verdict = null, corrected = null, feedback = [];
+    let mode = null;
+    for(const line of lines){
+      if(/^VERDICT:/i.test(line)){ verdict = line.replace(/^VERDICT:/i, "").trim().toLowerCase(); mode = null; }
+      else if(/^CORRECTED:/i.test(line)){ corrected = line.replace(/^CORRECTED:/i, "").trim(); mode = null; }
+      else if(/^FEEDBACK:/i.test(line)){ feedback.push(line.replace(/^FEEDBACK:/i, "").trim()); mode = "feedback"; }
+      else if(mode === "feedback"){ feedback.push(line); }
+    }
+    return { verdict, corrected, feedback: feedback.join(" "), raw };
+  }
+
+  function showResult({ state, message }){
+    resultPanel.hidden = false;
+    if(state === "loading"){
+      resultPanel.innerHTML = `<div class="result-badge"><span class="spinner" style="border-top-color:var(--label-tertiary);border-color:var(--fill-secondary);border-top-color:var(--label-secondary);"></span> Checking…</div>`;
+      return;
+    }
+    if(state === "error"){
+      resultPanel.innerHTML = `
+        <div class="result-badge error">⚠️ Couldn't check</div>
+        <div class="result-feedback">${escapeHtml(message)}</div>
+      `;
+      return;
+    }
+
+    const parsed = parseFeedback(message);
+    const isCorrect = parsed.verdict === "correct";
+    const badgeClass = parsed.verdict ? (isCorrect ? "correct" : "incorrect") : "incorrect";
+    const badgeLabel = parsed.verdict
+      ? (isCorrect ? "Looks good ✓" : "Needs a small fix")
+      : "Feedback";
+
+    const hasCorrection = parsed.corrected && parsed.corrected.toLowerCase() !== "same" && !isCorrect;
+
+    resultPanel.innerHTML = `
+      <div class="result-badge ${badgeClass}">${badgeLabel}</div>
+      ${hasCorrection ? `<div class="result-corrected"><span class="label">Suggested correction</span>${escapeHtml(parsed.corrected)}</div>` : ""}
+      <div class="result-feedback">${escapeHtml(parsed.feedback || parsed.raw)}</div>
+    `;
+  }
+
+  async function checkSentence(){
+    const apiKey = (localStorage.getItem(KEY_STORAGE) || "").trim();
+    const sentence = sentenceInput.value.trim();
+    const card = VOCAB_DATA[currentIndex];
+
+    if(!apiKey){
+      settingsDetails.open = true;
+      showResult({ state: "error", message: "Add your Anthropic API key in API settings below first." });
+      return;
+    }
+    if(!sentence){
+      showResult({ state: "error", message: "Write a sentence first." });
+      return;
+    }
+
+    checkBtn.disabled = true;
+    checkBtn.innerHTML = "Checking…";
+    showResult({ state: "loading" });
+
+    const model = localStorage.getItem(MODEL_STORAGE) || "claude-opus-5";
+    const systemPrompt = "You are a friendly, encouraging English tutor helping a B2-C1 level learner practice vocabulary. "
+      + "You are given a target word or phrase (with its part of speech and definition) and a sentence the learner wrote using it. "
+      + "Check two things: (1) whether the sentence is grammatically correct, natural English, and (2) whether the target word/phrase is used correctly, with its intended meaning. "
+      + "Be encouraging but honest, and keep feedback short (1-2 sentences). "
+      + "Respond in exactly this format, with these three lines and nothing else:\n"
+      + "VERDICT: correct or incorrect\n"
+      + "CORRECTED: the corrected sentence, or the word \"same\" if no correction is needed\n"
+      + "FEEDBACK: a short, encouraging explanation, focusing especially on whether the target word/phrase was used correctly";
+
+    const userMsg = `Target: "${card.word}" (${card.pos})\nDefinition: ${card.definition}\nLearner's sentence: "${sentence}"`;
+
+    try{
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 500,
+          output_config: { effort: "low" },
+          system: systemPrompt,
+          messages: [{ role: "user", content: userMsg }]
+        })
+      });
+
+      if(!res.ok){
+        let msg = `Request failed (HTTP ${res.status}).`;
+        try{
+          const errBody = await res.json();
+          if(errBody && errBody.error && errBody.error.message) msg = errBody.error.message;
+        }catch(e){}
+        if(res.status === 401) msg = "That API key was rejected. Check it in API settings below.";
+        if(res.status === 429) msg = "Rate limited — wait a moment and try again.";
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+      showResult({ state: "done", message: text });
+    }catch(err){
+      showResult({ state: "error", message: err.message || "Something went wrong. Check your connection and API key." });
+    }finally{
+      checkBtn.disabled = false;
+      checkBtn.innerHTML = checkIcon;
+    }
+  }
+
+  checkBtn.addEventListener("click", checkSentence);
+
+  showWord(currentIndex);
+}
+window.addEventListener("vocabdata-ready", initApp);
+</script>
+</body>
+</html>

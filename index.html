@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vocab Cards</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .card-wrap{
+    width:100%;
+    perspective:1600px;
+    margin-bottom:20px;
+  }
+  .card{
+    position:relative;
+    width:100%;
+    min-height:340px;
+    border-radius:26px;
+    cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform 0.5s cubic-bezier(.32,.9,.24,1);
+  }
+  .card.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    background:var(--card-bg);
+    border:0.5px solid var(--hairline-soft);
+    border-radius:26px;
+    box-shadow:var(--shadow);
+    backface-visibility:hidden;
+    padding:22px 24px 20px;
+    display:flex;
+    flex-direction:column;
+  }
+  .face.back{transform:rotateY(180deg);}
+  .empty-state{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:var(--label-tertiary);
+    padding:40px;
+    font-size:0.95rem;
+  }
+
+  .front-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .date-badge{
+    color:var(--label-tertiary);
+    font-size:0.72rem;
+    font-weight:500;
+  }
+  .front-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:0 4px;
+    gap:14px;
+  }
+  .word{
+    font-size:2rem;
+    font-weight:700;
+    line-height:1.2;
+    letter-spacing:-0.02em;
+  }
+  .speak-btn{
+    width:40px;
+    height:40px;
+    border-radius:999px;
+    border:none;
+    background:var(--blue-tint);
+    color:var(--blue);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .speak-btn svg{width:19px;height:19px;}
+  .speak-btn.speaking{background:var(--blue);color:#fff;}
+  .speak-btn.unsupported{display:none;}
+  .word-small-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .speak-btn.small{width:28px;height:28px;flex:0 0 28px;}
+  .speak-btn.small svg{width:14px;height:14px;}
+  .hint{
+    color:var(--label-tertiary);
+    font-size:0.76rem;
+    text-align:center;
+    font-weight:500;
+  }
+
+  .back .word-small{
+    font-size:0.95rem;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin-bottom:2px;
+  }
+  .back .word-small .pos-inline{
+    color:var(--label-tertiary);
+    font-weight:500;
+  }
+  .group{
+    background:var(--fill-tertiary);
+    border-radius:14px;
+    margin-top:12px;
+    padding:2px 14px;
+  }
+  .row{
+    padding:10px 0;
+  }
+  .row + .row{
+    border-top:0.5px solid var(--hairline-soft);
+  }
+  .section-label{
+    font-size:0.66rem;
+    font-weight:700;
+    color:var(--label-tertiary);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:3px;
+  }
+  .definition{font-size:0.96rem;line-height:1.42;}
+  .example{font-size:0.94rem;line-height:1.5;}
+  .blank{
+    display:inline-block;
+    min-width:56px;
+    background:var(--blue-tint);
+    color:var(--blue);
+    font-weight:700;
+    text-align:center;
+    border-radius:7px;
+    padding:1px 8px;
+    cursor:pointer;
+  }
+  .synonyms{display:flex;flex-wrap:wrap;gap:6px;padding-top:1px;}
+
+  /* ---------- controls ---------- */
+  .controls{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:auto;
+  }
+  .nav-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .mark-row{
+    display:flex;
+    gap:10px;
+  }
+  .mark-btn{
+    flex:1;
+    height:48px;
+    border-radius:16px;
+    border:none;
+    font-size:0.9rem;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    cursor:pointer;
+  }
+  .mark-btn svg{width:18px;height:18px;}
+  .mark-btn.learning{background:var(--orange-tint);color:var(--orange);}
+  .mark-btn.known{background:var(--green-tint);color:var(--green);}
+
+  /* ---------- word list table ---------- */
+  .table-wrap{
+    width:100%;
+    max-width:480px;
+    margin:0 auto;
+    padding:12px 16px 40px;
+  }
+  @media (min-width:640px){
+    .table-wrap{max-width:700px;}
+  }
+  @media (min-width:960px){
+    .table-wrap{max-width:900px;}
+  }
+  .table-section{
+    width:100%;
+  }
+  .table-section h2{
+    font-size:0.95rem;
+    font-weight:700;
+    margin:0 0 12px;
+    letter-spacing:-0.01em;
+  }
+  .search-input{
+    margin-bottom:12px;
+  }
+  .table-scroll{
+    width:100%;
+    overflow-x:auto;
+    border-radius:16px;
+    border:0.5px solid var(--hairline-soft);
+  }
+  table.word-table{
+    width:100%;
+    min-width:520px;
+    border-collapse:collapse;
+    background:var(--card-bg);
+    font-size:0.86rem;
+  }
+  table.word-table th{
+    text-align:left;
+    font-size:0.66rem;
+    font-weight:700;
+    color:var(--label-tertiary);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:10px 14px;
+    background:var(--fill-tertiary);
+    position:sticky;
+    top:0;
+  }
+  table.word-table td{
+    padding:12px 14px;
+    vertical-align:top;
+    border-top:0.5px solid var(--hairline-soft);
+  }
+  table.word-table td.word-cell{
+    font-weight:700;
+    white-space:nowrap;
+  }
+  table.word-table .table-date{
+    color:var(--label-tertiary);
+    font-weight:500;
+    white-space:nowrap;
+  }
+  table.word-table .table-example{
+    color:var(--label-secondary);
+    font-style:italic;
+    margin-top:4px;
+  }
+  table.word-table .synonyms{margin-top:6px;}
+  .table-empty{
+    padding:24px;
+    text-align:center;
+    color:var(--label-tertiary);
+    font-size:0.88rem;
+  }
+</style>
+</head>
+<body>
+
+<script src="accounts.js"></script>
+<script src="auth.js"></script>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="title-row">
+      <h1>🗂️ Vocab Cards</h1>
+      <div class="stats">
+        <span class="profile-label" id="profileLabel"></span>
+        <span class="pill learning" id="learningCount">0 learning</span>
+        <span class="pill known" id="knownCount">0 known</span>
+        <a class="nav-link" href="#" id="switchProfileBtn">Switch</a>
+        <a class="nav-link" href="practice.html">
+          Practice
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="segmented" id="statusSegmented">
+      <div class="thumb" id="statusThumb"></div>
+      <button data-value="all" class="active">All</button>
+      <button data-value="new">New</button>
+      <button data-value="learning">Learning</button>
+      <button data-value="known">Known</button>
+    </div>
+    <div class="date-row" id="dateRow"></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="card-wrap">
+    <div class="card" id="card">
+      <div class="face front" id="faceFront"></div>
+      <div class="face back" id="faceBack"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="nav-row">
+      <button class="icon-btn" id="prevBtn" title="Previous">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="primary-btn" id="flipBtn" title="Flip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="13" rx="3"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3H18a3 3 0 0 1 3 3v7.5a2.5 2.5 0 0 1-2.5 2.5H17"/></svg>
+        Flip card
+      </button>
+      <button class="icon-btn" id="nextBtn" title="Next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="mark-row">
+      <button class="mark-btn learning" id="learningBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Still learning
+      </button>
+      <button class="mark-btn known" id="knownBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Known
+      </button>
+    </div>
+
+    <div class="util-row">
+      <button class="util-btn" id="shuffleBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4M3 7h9c2 0 3 1 4 3M21 17l-4 4-4-4M21 17h-9c-2 0-3-1-4-3"/></svg>
+        Shuffle
+      </button>
+      <button class="util-btn" id="resetBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+        Reset progress
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <div class="table-section">
+    <h2>All words (<span id="tableCount">0</span>)</h2>
+    <input class="search-input" type="text" id="tableSearch" placeholder="Search words or definitions…">
+    <div class="table-scroll">
+      <table class="word-table">
+        <thead>
+          <tr><th>Word / phrase</th><th>Type</th><th>Explanation</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function initApp(){
+  document.getElementById("profileLabel").textContent = window.currentAccountLabel ? window.currentAccountLabel() : "";
+  document.getElementById("switchProfileBtn").addEventListener("click", (e) => {
+    e.preventDefault();
+    if(window.switchProfile) window.switchProfile();
+  });
+
+  const STORAGE_KEY = "vocabapp_progress_v1";
+  let progress = {};
+  try{ progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ progress = {}; }
+
+  function saveProgress(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); }catch(e){}
+  }
+  function statusOf(word){ return progress[word] || "new"; }
+
+  function formatDate(iso){
+    if(!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+
+  const speakerIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>`;
+
+  const speechSupported = "speechSynthesis" in window;
+  let englishVoice = null;
+  function pickVoice(){
+    if(!speechSupported) return;
+    const voices = window.speechSynthesis.getVoices();
+    englishVoice = voices.find(v => /en[-_]US/i.test(v.lang))
+      || voices.find(v => /^en/i.test(v.lang))
+      || null;
+  }
+  if(speechSupported){
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speechTextFor(word){
+    return word
+      .replace(/\(.*?\)/g, "")
+      .replace(/\//g, " or ")
+      .replace(/\bsth\b/g, "something")
+      .replace(/\bsb\b/g, "somebody")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function speak(word){
+    if(!speechSupported) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(speechTextFor(word));
+    utterance.lang = "en-US";
+    utterance.rate = 0.92;
+    if(englishVoice) utterance.voice = englishVoice;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  let order = VOCAB_DATA.map((_, i) => i);
+  let statusFilter = "all";
+  let dateFilter = "all";
+  let pos = 0;
+  let flipped = false;
+
+  const cardEl = document.getElementById("card");
+  const faceFront = document.getElementById("faceFront");
+  const faceBack = document.getElementById("faceBack");
+  const learningCountEl = document.getElementById("learningCount");
+  const knownCountEl = document.getElementById("knownCount");
+  const statusSegmented = document.getElementById("statusSegmented");
+  const statusThumb = document.getElementById("statusThumb");
+  const dateRow = document.getElementById("dateRow");
+
+  const uniqueDates = Array.from(new Set(VOCAB_DATA.map(c => c.dateAdded).filter(Boolean))).sort().reverse();
+
+  function buildDateChips(){
+    const chips = [{ value: "all", label: "All dates" }]
+      .concat(uniqueDates.map(d => ({ value: d, label: formatDate(d) })));
+    dateRow.innerHTML = chips.map(c =>
+      `<button class="chip-btn${c.value === dateFilter ? " active" : ""}" data-value="${c.value}">${c.label}</button>`
+    ).join("");
+    dateRow.querySelectorAll(".chip-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        dateFilter = btn.dataset.value;
+        pos = 0;
+        flipped = false;
+        buildDateChips();
+        render();
+      });
+    });
+  }
+
+  function moveStatusThumb(){
+    const buttons = Array.from(statusSegmented.querySelectorAll("button"));
+    const idx = buttons.findIndex(b => b.dataset.value === statusFilter);
+    statusThumb.style.transform = `translateX(${idx * 100}%)`;
+    buttons.forEach(b => b.classList.toggle("active", b.dataset.value === statusFilter));
+  }
+
+  function filteredOrder(){
+    return order.filter(i => {
+      const card = VOCAB_DATA[i];
+      if(statusFilter !== "all" && statusOf(card.word) !== statusFilter) return false;
+      if(dateFilter !== "all" && card.dateAdded !== dateFilter) return false;
+      return true;
+    });
+  }
+
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function renderExample(example){
+    const parts = example.split(/(_{3,})/);
+    return parts.map(p => {
+      if(/^_{3,}$/.test(p)){
+        return `<span class="blank" data-revealed="false">•••</span>`;
+      }
+      return escapeHtml(p);
+    }).join("");
+  }
+
+  function render(){
+    const deck = filteredOrder();
+    updateStats();
+
+    if(deck.length === 0){
+      faceFront.innerHTML = `<div class="empty-state">No cards match this filter.<br>Try a different filter, or add more words.</div>`;
+      faceBack.innerHTML = "";
+      cardEl.classList.remove("flipped");
+      flipped = false;
+      return;
+    }
+
+    if(pos >= deck.length) pos = 0;
+    if(pos < 0) pos = deck.length - 1;
+
+    const card = VOCAB_DATA[deck[pos]];
+
+    faceFront.innerHTML = `
+      <div class="front-head">
+        <span class="pos-badge">${escapeHtml(card.pos || "")}</span>
+        <span class="date-badge">${formatDate(card.dateAdded)}</span>
+      </div>
+      <div class="front-body">
+        <div class="word">${escapeHtml(card.word)}</div>
+        <button class="speak-btn" id="speakFrontBtn" title="Pronounce (P)">${speakerIcon}</button>
+      </div>
+      <div class="hint">Tap to reveal · ${pos + 1} / ${deck.length}</div>
+    `;
+
+    const synonymsHtml = (card.synonyms && card.synonyms.length)
+      ? `<div class="row">
+           <div class="section-label">Synonyms / related</div>
+           <div class="synonyms">${card.synonyms.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join("")}</div>
+         </div>`
+      : "";
+
+    faceBack.innerHTML = `
+      <div class="word-small-row">
+        <div class="word-small">${escapeHtml(card.word)} <span class="pos-inline">— ${escapeHtml(card.pos || "")}</span></div>
+        <button class="speak-btn small" id="speakBackBtn" title="Pronounce (P)">${speakerIcon}</button>
+      </div>
+      <div class="group">
+        <div class="row">
+          <div class="section-label">Definition</div>
+          <div class="definition">${escapeHtml(card.definition)}</div>
+        </div>
+        <div class="row">
+          <div class="section-label">Example</div>
+          <div class="example">${renderExample(card.example || "")}</div>
+        </div>
+        ${synonymsHtml}
+      </div>
+    `;
+
+    cardEl.classList.toggle("flipped", flipped);
+
+    faceBack.querySelectorAll(".blank").forEach(el => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isRevealed = el.dataset.revealed === "true";
+        el.dataset.revealed = isRevealed ? "false" : "true";
+        el.textContent = isRevealed ? "•••" : card.word;
+      });
+    });
+
+    if(!speechSupported){
+      faceFront.querySelectorAll(".speak-btn").forEach(b => b.classList.add("unsupported"));
+      faceBack.querySelectorAll(".speak-btn").forEach(b => b.classList.add("unsupported"));
+    }
+    [faceFront.querySelector("#speakFrontBtn"), faceBack.querySelector("#speakBackBtn")].forEach(btn => {
+      if(!btn) return;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        speak(card.word);
+      });
+    });
+  }
+
+  function fillExample(example, word){
+    const plain = word.replace(/\(.*?\)/g, "").split("/")[0].trim();
+    return escapeHtml((example || "").replace(/_{3,}/, plain));
+  }
+
+  const tableBody = document.getElementById("tableBody");
+  const tableCount = document.getElementById("tableCount");
+  const tableSearch = document.getElementById("tableSearch");
+  const sortedForTable = VOCAB_DATA
+    .map((c, i) => ({ ...c, _i: i }))
+    .sort((a, b) => (b.dateAdded || "").localeCompare(a.dateAdded || "") || a._i - b._i);
+
+  function renderTable(){
+    const q = tableSearch.value.trim().toLowerCase();
+    const rows = sortedForTable.filter(c => {
+      if(!q) return true;
+      return c.word.toLowerCase().includes(q) || c.definition.toLowerCase().includes(q);
+    });
+
+    tableCount.textContent = rows.length;
+
+    if(rows.length === 0){
+      tableBody.innerHTML = `<tr><td colspan="3" class="table-empty">No words match "${escapeHtml(q)}".</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = rows.map(c => {
+      const synonymsHtml = (c.synonyms && c.synonyms.length)
+        ? `<div class="synonyms">${c.synonyms.map(s => `<span class="chip">${escapeHtml(s)}</span>`).join("")}</div>`
+        : "";
+      return `
+        <tr>
+          <td class="word-cell">${escapeHtml(c.word)}<div class="table-date">${formatDate(c.dateAdded)}</div></td>
+          <td><span class="pos-badge">${escapeHtml(c.pos || "")}</span></td>
+          <td>
+            <div class="definition">${escapeHtml(c.definition)}</div>
+            <div class="table-example">${fillExample(c.example, c.word)}</div>
+            ${synonymsHtml}
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  tableSearch.addEventListener("input", renderTable);
+
+  function updateStats(){
+    let known = 0, learning = 0;
+    VOCAB_DATA.forEach(c => {
+      const s = statusOf(c.word);
+      if(s === "known") known++;
+      else if(s === "learning") learning++;
+    });
+    knownCountEl.textContent = `${known} known`;
+    learningCountEl.textContent = `${learning} learning`;
+  }
+
+  function flip(){
+    flipped = !flipped;
+    cardEl.classList.toggle("flipped", flipped);
+  }
+
+  function goNext(){ flipped = false; pos++; render(); }
+  function goPrev(){ flipped = false; pos--; render(); }
+
+  function mark(status){
+    const deck = filteredOrder();
+    if(deck.length === 0) return;
+    const card = VOCAB_DATA[deck[pos]];
+    progress[card.word] = status;
+    saveProgress();
+    goNext();
+  }
+
+  cardEl.addEventListener("click", flip);
+  document.getElementById("flipBtn").addEventListener("click", flip);
+  document.getElementById("nextBtn").addEventListener("click", goNext);
+  document.getElementById("prevBtn").addEventListener("click", goPrev);
+  document.getElementById("knownBtn").addEventListener("click", () => mark("known"));
+  document.getElementById("learningBtn").addEventListener("click", () => mark("learning"));
+  document.getElementById("shuffleBtn").addEventListener("click", () => {
+    shuffle(order);
+    pos = 0;
+    flipped = false;
+    render();
+  });
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if(confirm("Reset known/learning status for all cards?")){
+      progress = {};
+      saveProgress();
+      render();
+    }
+  });
+
+  statusSegmented.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      statusFilter = btn.dataset.value;
+      pos = 0;
+      flipped = false;
+      moveStatusThumb();
+      render();
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if(e.code === "Space"){ e.preventDefault(); flip(); }
+    else if(e.code === "ArrowRight"){ goNext(); }
+    else if(e.code === "ArrowLeft"){ goPrev(); }
+    else if(e.key.toLowerCase() === "k"){ mark("known"); }
+    else if(e.key.toLowerCase() === "l"){ mark("learning"); }
+    else if(e.key.toLowerCase() === "p"){
+      const deck = filteredOrder();
+      if(deck.length) speak(VOCAB_DATA[deck[pos]].word);
+    }
+  });
+
+  buildDateChips();
+  moveStatusThumb();
+  render();
+  renderTable();
+}
+window.addEventListener("vocabdata-ready", initApp);
+</script>
+</body>
+</html>
