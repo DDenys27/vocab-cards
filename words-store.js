@@ -36,3 +36,41 @@ function vocabAddCustomCards(accountId, newCards){
 function vocabMergedDeck(seedArray, accountId){
   return (seedArray || []).concat(vocabGetCustomCards(accountId));
 }
+
+// Pinned words are a per-account, per-browser overlay (localStorage), not a
+// change to the card's real `topic` field. A pinned card keeps showing under
+// its own topic AND also shows up under the virtual "Pinned" filter — it's
+// duplicated into that view, not moved out of its original topic.
+function vocabPinnedKey(accountId){
+  return "vocabapp_pinned_" + accountId;
+}
+
+function vocabGetPinnedSet(accountId){
+  if(!accountId) return {};
+  try{
+    const raw = localStorage.getItem(vocabPinnedKey(accountId));
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){
+    return {};
+  }
+}
+
+function vocabIsPinned(accountId, word){
+  return !!vocabGetPinnedSet(accountId)[word];
+}
+
+function vocabSetPinned(accountId, word, pinned){
+  if(!accountId) return;
+  const set = vocabGetPinnedSet(accountId);
+  if(pinned) set[word] = true;
+  else delete set[word];
+  try{
+    localStorage.setItem(vocabPinnedKey(accountId), JSON.stringify(set));
+  }catch(e){}
+}
+
+function vocabTogglePinned(accountId, word){
+  const now = !vocabIsPinned(accountId, word);
+  vocabSetPinned(accountId, word, now);
+  return now;
+}

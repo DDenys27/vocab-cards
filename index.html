@@ -57,6 +57,21 @@
     padding:4px 10px;
     border-radius:999px;
   }
+  .pin-btn{
+    width:24px;
+    height:24px;
+    flex:0 0 24px;
+    border-radius:999px;
+    border:none;
+    background:var(--fill-secondary);
+    color:var(--label-tertiary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .pin-btn svg{width:13px;height:13px;}
+  .pin-btn.pinned{background:var(--orange-tint);color:var(--orange);}
   .front-body{
     flex:1;
     display:flex;
@@ -431,6 +446,10 @@ function initApp(){
 
   const speakerIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>`;
 
+  function pinIcon(pinned){
+    return `<svg viewBox="0 0 24 24" fill="${pinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5" fill="${pinned ? "var(--card-bg)" : "none"}"/></svg>`;
+  }
+
   const speechSupported = "speechSynthesis" in window;
   let englishVoice = null;
   function pickVoice(){
@@ -483,7 +502,7 @@ function initApp(){
   const uniqueTopics = Array.from(new Set(DECK.map(c => c.topic).filter(Boolean))).sort();
 
   function buildTopicChips(){
-    const chips = [{ value: "all", label: "All" }]
+    const chips = [{ value: "all", label: "All" }, { value: "pinned", label: "📌 Pinned" }]
       .concat(uniqueTopics.map(t => ({ value: t, label: t })));
     topicRow.innerHTML = chips.map(c =>
       `<button class="chip-btn${c.value === topicFilter ? " active" : ""}" data-value="${escapeHtml(c.value)}">${escapeHtml(c.label)}</button>`
@@ -506,11 +525,19 @@ function initApp(){
     buttons.forEach(b => b.classList.toggle("active", b.dataset.value === statusFilter));
   }
 
+  function isPinned(word){
+    return window.vocabIsPinned ? window.vocabIsPinned(accountId, word) : false;
+  }
+
   function filteredOrder(){
     return order.filter(i => {
       const card = DECK[i];
       if(statusFilter !== "all" && statusOf(card.word) !== statusFilter) return false;
-      if(topicFilter !== "all" && card.topic !== topicFilter) return false;
+      if(topicFilter === "pinned"){
+        if(!isPinned(card.word)) return false;
+      } else if(topicFilter !== "all" && card.topic !== topicFilter){
+        return false;
+      }
       return true;
     });
   }
@@ -555,11 +582,15 @@ function initApp(){
     if(pos < 0) pos = deck.length - 1;
 
     const card = DECK[deck[pos]];
+    const pinned = isPinned(card.word);
 
     faceFront.innerHTML = `
       <div class="front-head">
         <span class="pos-badge">${escapeHtml(card.pos || "")}</span>
-        <span class="topic-badge">${escapeHtml(card.topic || "")}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="topic-badge">${escapeHtml(card.topic || "")}</span>
+          <button class="pin-btn${pinned ? " pinned" : ""}" id="pinFrontBtn" title="${pinned ? "Unpin" : "Pin"}">${pinIcon(pinned)}</button>
+        </div>
       </div>
       <div class="front-body">
         ${card.icon && typeof ICONS !== "undefined" && ICONS[card.icon] ? `<svg class="word-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[card.icon]}</svg>` : ""}
@@ -624,6 +655,15 @@ function initApp(){
         speak(card.word);
       });
     });
+
+    const pinBtn = faceFront.querySelector("#pinFrontBtn");
+    if(pinBtn){
+      pinBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if(window.vocabTogglePinned) window.vocabTogglePinned(accountId, card.word);
+        render();
+      });
+    }
   }
 
   function fillExample(example, word){
@@ -659,9 +699,16 @@ function initApp(){
       const translationHtml = c.translation
         ? `<div class="translation">${escapeHtml(c.translation)}</div>`
         : "";
+      const pinned = isPinned(c.word);
       return `
         <tr>
-          <td class="word-cell">${escapeHtml(c.word)}<div class="table-topic">${escapeHtml(c.topic || "")}</div></td>
+          <td class="word-cell">
+            <div style="display:flex;align-items:center;gap:6px;">
+              ${escapeHtml(c.word)}
+              <button class="pin-btn table-pin-btn${pinned ? " pinned" : ""}" data-word="${escapeHtml(c.word)}" title="${pinned ? "Unpin" : "Pin"}">${pinIcon(pinned)}</button>
+            </div>
+            <div class="table-topic">${escapeHtml(c.topic || "")}</div>
+          </td>
           <td><span class="pos-badge">${escapeHtml(c.pos || "")}</span></td>
           <td>
             <div class="definition">${escapeHtml(c.definition)}</div>
@@ -672,6 +719,14 @@ function initApp(){
         </tr>
       `;
     }).join("");
+
+    tableBody.querySelectorAll(".table-pin-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if(window.vocabTogglePinned) window.vocabTogglePinned(accountId, btn.dataset.word);
+        renderTable();
+        render();
+      });
+    });
   }
 
   tableSearch.addEventListener("input", renderTable);

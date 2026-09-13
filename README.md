@@ -13,6 +13,7 @@ Open `index.html` in a browser (double-click locally, or visit the published URL
 - Click the speaker icon (or press **P**) to hear the word pronounced.
 - Mark each card "Known ✓" or "Still learning" — progress is saved per browser (localStorage).
 - Filter by status and by topic (All / Career / ...); shuffle the deck anytime.
+- Click the pin icon (on the card or in the word table) to pin a word — it shows up under the "📌 Pinned" filter *in addition to* its normal topic, without leaving that topic. Pins are saved per browser (localStorage), separate from progress.
 - Scroll down for a searchable table of every word in your deck.
 - Use **Practice** in the top bar to write your own sentences and have Claude check them.
 - Use **Add words** in the top bar to add new words yourself, no Claude Code needed (see below).
