@@ -30,7 +30,7 @@ const VOCAB_DATA = [
     word: "to undermine",
     pos: "verb",
     definition: "to gradually weaken someone's confidence, authority, or a situation",
-    example: "Constant criticism from her boss began to ____ her confidence.",
+    example: "Constant criticism from her boss began ____ her confidence.",
     synonyms: ["weaken", "erode", "sabotage"],
     topic: "Work & Career",
     dateAdded: "2026-09-12"
@@ -54,7 +54,7 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-12"
   },
   {
-    word: "to have no idea / no clue",
+    word: "no idea / no clue",
     pos: "phrase",
     definition: "to not know something at all",
     example: "I still have ____ where I left those keys. No clue!",
@@ -63,8 +63,8 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-12"
   },
   {
-    word: "to be/get stuck",
-    pos: "phrase",
+    word: "stuck",
+    pos: "adjective",
     definition: "unable to move, escape, or continue; trapped somewhere or in a situation",
     example: "I got ____ in the elevator for twenty minutes yesterday.",
     synonyms: ["trapped", "jammed"],
@@ -84,13 +84,13 @@ const VOCAB_DATA = [
     word: "to spot",
     pos: "verb",
     definition: "to notice or see someone/something, especially something not easy to see",
-    example: "She ____ a small mistake in the report that everyone else had missed.",
+    example: "She was quick ____ a small mistake in the report that everyone else had missed.",
     synonyms: ["notice", "catch sight of"],
     topic: "Language & Communication",
     dateAdded: "2026-09-12"
   },
   {
-    word: "a rash",
+    word: "rash",
     pos: "noun",
     definition: "an area of red spots or patches on the skin, often caused by illness or an allergic reaction",
     example: "The new soap gave her an itchy ____ on her arms.",
@@ -99,10 +99,10 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-12"
   },
   {
-    word: "to suffer from sth",
+    word: "suffer from",
     pos: "verb phrase",
     definition: "to regularly experience an illness, pain, or other negative condition",
-    example: "He has ____ hay fever every spring since he was a child.",
+    example: "He tends to ____ hay fever every spring since he was a child.",
     synonyms: [],
     topic: "Health & Body",
     dateAdded: "2026-09-12"
@@ -117,7 +117,7 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-12"
   },
   {
-    word: "allergic (to sth)",
+    word: "allergic",
     pos: "adjective",
     definition: "having a medical condition that causes an unpleasant reaction (immune system) to a particular substance",
     example: "I am ____ to pollen, so spring is a difficult season for me.",
@@ -126,7 +126,7 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-12"
   },
   {
-    word: "intolerant (to/of sth)",
+    word: "intolerant",
     pos: "adjective",
     definition: "unable to eat or drink a particular substance without an unpleasant physical reaction, usually digestive rather than immune",
     example: "I'm ____ to raw cow's milk, so I drink oat milk instead.",
@@ -135,7 +135,7 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-12"
   },
   {
-    word: "to make up one's mind",
+    word: "make up one's mind",
     pos: "phrase",
     definition: "to decide something firmly, especially after thinking about it for a while",
     example: "It took her a whole week to ____ about which university to attend.",
@@ -144,7 +144,7 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-13"
   },
   {
-    word: "to collate sth",
+    word: "collate",
     pos: "verb",
     definition: "to collect and combine documents or information in a proper, organized order",
     example: "She had to ____ all the survey responses before the meeting.",
@@ -153,16 +153,16 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-13"
   },
   {
-    word: "to make sb redundant",
-    pos: "verb phrase",
-    definition: "to dismiss an employee because their job is no longer needed (UK usage)",
-    example: "The company had to ____ fifty workers after losing its biggest client.",
-    synonyms: ["lay off", "downsize"],
+    word: "redundant",
+    pos: "adjective",
+    definition: "no longer needed for a job, and therefore dismissed by an employer (UK usage)",
+    example: "The company had to make fifty workers ____ after losing its biggest client.",
+    synonyms: ["laid off", "out of work"],
     topic: "Work & Career",
     dateAdded: "2026-09-13"
   },
   {
-    word: "to unwind",
+    word: "unwind",
     pos: "verb",
     definition: "to relax and stop feeling tense, especially after work or stress",
     example: "I like to ____ with a good book after a long day at work.",
@@ -171,16 +171,16 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-13"
   },
   {
-    word: "to put up with sth",
+    word: "put up with",
     pos: "phrasal verb",
     definition: "to tolerate something unpleasant without complaining",
-    example: "I don't know how she ____ his constant complaining.",
+    example: "I don't know how she can ____ his constant complaining.",
     synonyms: ["tolerate", "endure", "stand (informal)"],
     topic: "Feelings & Relationships",
     dateAdded: "2026-09-13"
   },
   {
-    word: "to bargain (sth)",
+    word: "bargain",
     pos: "verb",
     definition: "to negotiate the terms of a deal, often to get a lower price",
     example: "He managed to ____ the price down by twenty percent.",
@@ -189,7 +189,7 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-13"
   },
   {
-    word: "to assign sb (sth)",
+    word: "assign",
     pos: "verb",
     definition: "to officially give someone a task or responsibility",
     example: "The manager decided to ____ the new project to Sarah.",
@@ -198,16 +198,16 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-13"
   },
   {
-    word: "to cross paths (with sb)",
+    word: "cross paths",
     pos: "idiom",
     definition: "to meet someone, often unexpectedly",
-    example: "We ____ again years later at a conference in Berlin.",
+    example: "We were destined to ____ again years later at a conference in Berlin.",
     synonyms: ["run into", "bump into"],
     topic: "Feelings & Relationships",
     dateAdded: "2026-09-13"
   },
   {
-    word: "to set off",
+    word: "set off",
     pos: "phrasal verb",
     definition: "to start a journey or trip",
     example: "We ____ for the airport at 5 a.m. to avoid traffic.",
@@ -216,10 +216,10 @@ const VOCAB_DATA = [
     dateAdded: "2026-09-13"
   },
   {
-    word: "to brag about sth",
+    word: "brag about",
     pos: "verb phrase",
     definition: "to talk too proudly about your own achievements or possessions",
-    example: "He's always ____ his new car to everyone at work.",
+    example: "He loves to ____ his new car to everyone at work.",
     synonyms: ["boast about", "show off"],
     topic: "Feelings & Relationships",
     dateAdded: "2026-09-13"
