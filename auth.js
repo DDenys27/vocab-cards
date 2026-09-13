@@ -71,8 +71,12 @@
     location.reload();
   };
 
+  window.currentAccountId = function(){
+    try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+  };
+
   window.currentAccountLabel = function(){
-    const id = (function(){ try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; } })();
+    const id = window.currentAccountId();
     const acc = id ? getAccount(id) : null;
     return acc ? acc.label : "";
   };

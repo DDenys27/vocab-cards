@@ -261,16 +261,20 @@
 
 <script src="accounts.js"></script>
 <script src="auth.js"></script>
+<script src="words-store.js"></script>
 
 <div class="topbar">
   <div class="topbar-inner">
     <div class="title-row">
       <h1>🗂️ Vocab Cards</h1>
+      <a class="switch-btn" href="#" id="switchProfileBtn">Switch account</a>
+    </div>
+    <div class="title-row meta-row">
+      <span class="profile-label" id="profileLabel"></span>
       <div class="stats">
-        <span class="profile-label" id="profileLabel"></span>
         <span class="pill learning" id="learningCount">0 learning</span>
         <span class="pill known" id="knownCount">0 known</span>
-        <a class="nav-link" href="#" id="switchProfileBtn">Switch</a>
+        <a class="nav-link" href="add-words.html">Add words</a>
         <a class="nav-link" href="practice.html">
           Practice
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
@@ -357,6 +361,9 @@ function initApp(){
     if(window.switchProfile) window.switchProfile();
   });
 
+  const accountId = window.currentAccountId ? window.currentAccountId() : null;
+  const DECK = window.vocabMergedDeck ? window.vocabMergedDeck(VOCAB_DATA, accountId) : VOCAB_DATA;
+
   const STORAGE_KEY = "vocabapp_progress_v1";
   let progress = {};
   try{ progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ progress = {}; }
@@ -409,7 +416,7 @@ function initApp(){
     window.speechSynthesis.speak(utterance);
   }
 
-  let order = VOCAB_DATA.map((_, i) => i);
+  let order = DECK.map((_, i) => i);
   let statusFilter = "all";
   let dateFilter = "all";
   let pos = 0;
@@ -424,7 +431,7 @@ function initApp(){
   const statusThumb = document.getElementById("statusThumb");
   const dateRow = document.getElementById("dateRow");
 
-  const uniqueDates = Array.from(new Set(VOCAB_DATA.map(c => c.dateAdded).filter(Boolean))).sort().reverse();
+  const uniqueDates = Array.from(new Set(DECK.map(c => c.dateAdded).filter(Boolean))).sort().reverse();
 
   function buildDateChips(){
     const chips = [{ value: "all", label: "All dates" }]
@@ -452,7 +459,7 @@ function initApp(){
 
   function filteredOrder(){
     return order.filter(i => {
-      const card = VOCAB_DATA[i];
+      const card = DECK[i];
       if(statusFilter !== "all" && statusOf(card.word) !== statusFilter) return false;
       if(dateFilter !== "all" && card.dateAdded !== dateFilter) return false;
       return true;
@@ -498,7 +505,7 @@ function initApp(){
     if(pos >= deck.length) pos = 0;
     if(pos < 0) pos = deck.length - 1;
 
-    const card = VOCAB_DATA[deck[pos]];
+    const card = DECK[deck[pos]];
 
     faceFront.innerHTML = `
       <div class="front-head">
@@ -569,7 +576,7 @@ function initApp(){
   const tableBody = document.getElementById("tableBody");
   const tableCount = document.getElementById("tableCount");
   const tableSearch = document.getElementById("tableSearch");
-  const sortedForTable = VOCAB_DATA
+  const sortedForTable = DECK
     .map((c, i) => ({ ...c, _i: i }))
     .sort((a, b) => (b.dateAdded || "").localeCompare(a.dateAdded || "") || a._i - b._i);
 
@@ -609,7 +616,7 @@ function initApp(){
 
   function updateStats(){
     let known = 0, learning = 0;
-    VOCAB_DATA.forEach(c => {
+    DECK.forEach(c => {
       const s = statusOf(c.word);
       if(s === "known") known++;
       else if(s === "learning") learning++;
@@ -629,7 +636,7 @@ function initApp(){
   function mark(status){
     const deck = filteredOrder();
     if(deck.length === 0) return;
-    const card = VOCAB_DATA[deck[pos]];
+    const card = DECK[deck[pos]];
     progress[card.word] = status;
     saveProgress();
     goNext();
@@ -673,7 +680,7 @@ function initApp(){
     else if(e.key.toLowerCase() === "l"){ mark("learning"); }
     else if(e.key.toLowerCase() === "p"){
       const deck = filteredOrder();
-      if(deck.length) speak(VOCAB_DATA[deck[pos]].word);
+      if(deck.length) speak(DECK[deck[pos]].word);
     }
   });
 

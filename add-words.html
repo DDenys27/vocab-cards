@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add New Words</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .field-block{margin-bottom:16px;}
+  .field-block:last-child{margin-bottom:0;}
+
+  .dropzone{
+    width:100%;
+    border:1.5px dashed var(--hairline);
+    border-radius:16px;
+    padding:22px 16px;
+    text-align:center;
+    color:var(--label-tertiary);
+    font-size:0.86rem;
+    cursor:pointer;
+    background:var(--fill-tertiary);
+  }
+  .dropzone.dragover{
+    border-color:var(--blue);
+    color:var(--blue);
+    background:var(--blue-tint);
+  }
+  .dropzone svg{width:22px;height:22px;display:block;margin:0 auto 8px;}
+  .image-preview{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--fill-tertiary);
+    border-radius:16px;
+    padding:10px 14px;
+  }
+  .image-preview[hidden]{display:none;}
+  .image-preview img{
+    width:56px;height:56px;
+    object-fit:cover;
+    border-radius:10px;
+  }
+  .image-preview .name{
+    flex:1;
+    font-size:0.84rem;
+    color:var(--label-secondary);
+    word-break:break-all;
+  }
+  .image-preview button{
+    background:none;border:none;color:var(--red);font-weight:700;font-size:0.82rem;cursor:pointer;
+  }
+
+  .or-divider{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--label-tertiary);
+    font-size:0.76rem;
+    font-weight:600;
+    margin:14px 0;
+  }
+  .or-divider::before, .or-divider::after{
+    content:"";
+    flex:1;
+    height:0.5px;
+    background:var(--hairline);
+  }
+
+  #generateBtn svg{width:17px;height:17px;}
+
+  .gen-status{
+    width:100%;
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:14px;
+    background:var(--fill-tertiary);
+    font-size:0.88rem;
+  }
+  .gen-status.error{background:var(--red-tint);color:var(--red);}
+
+  .preview-list{
+    width:100%;
+    margin-top:16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .preview-card{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    background:var(--card-bg);
+    border:0.5px solid var(--hairline-soft);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .preview-card .preview-body{flex:1;}
+  .preview-card .preview-word{font-weight:700;font-size:0.94rem;}
+  .preview-card .preview-def{font-size:0.84rem;color:var(--label-secondary);margin-top:2px;}
+  .preview-card .remove-x{
+    background:none;border:none;color:var(--label-tertiary);font-size:1.1rem;line-height:1;cursor:pointer;padding:2px 4px;
+  }
+  .preview-card.removed{opacity:0.35;text-decoration:line-through;}
+
+  .save-row{
+    width:100%;
+    margin-top:14px;
+  }
+
+  .caveat-note{
+    font-size:0.76rem;
+    color:var(--label-tertiary);
+    line-height:1.4;
+    margin-top:18px;
+  }
+
+  .spinner{
+    width:16px;height:16px;
+    border-radius:999px;
+    border:2px solid var(--fill-secondary);
+    border-top-color:var(--label-secondary);
+    animation:spin 0.7s linear infinite;
+    display:inline-block;
+    vertical-align:middle;
+    margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  details.settings-details{
+    width:100%;
+    margin-top:28px;
+    border-top:0.5px solid var(--hairline-soft);
+    padding-top:16px;
+  }
+  details.settings-details summary{
+    cursor:pointer;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--label-secondary);
+    list-style:none;
+  }
+  details.settings-details summary::-webkit-details-marker{display:none;}
+  .settings-body{margin-top:14px;}
+  .settings-note{
+    font-size:0.76rem;
+    color:var(--label-tertiary);
+    line-height:1.4;
+    margin:6px 0 0;
+  }
+  .settings-note a{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<script src="accounts.js"></script>
+<script src="auth.js"></script>
+<script src="words-store.js"></script>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="title-row">
+      <h1>➕ Add Words</h1>
+      <a class="switch-btn" href="#" id="switchProfileBtn">Switch account</a>
+    </div>
+    <div class="title-row meta-row">
+      <span class="profile-label" id="profileLabel"></span>
+      <div class="stats">
+        <a class="nav-link" href="practice.html">Practice</a>
+        <a class="nav-link" href="index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          Cards
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="field-block">
+    <label class="field-label" for="textInput">Paste your word list (from a tutor, notes, anything)</label>
+    <textarea id="textInput" style="min-height:140px;" placeholder="e.g. paste raw notes: &#10;luckily / fortunately&#10;to be stuck in an elevator&#10;touch wood&#10;..."></textarea>
+  </div>
+
+  <div class="or-divider">OR / AND</div>
+
+  <div class="field-block">
+    <label class="field-label">Add a screenshot or photo of the word list</label>
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>
+      Click to choose a file, or paste a screenshot (⌘V) anywhere on this page
+      <input type="file" id="imageInput" accept="image/*" hidden>
+    </div>
+    <div class="image-preview" id="imagePreview" hidden>
+      <img id="imagePreviewThumb" alt="">
+      <span class="name" id="imagePreviewName"></span>
+      <button type="button" id="removeImageBtn">Remove</button>
+    </div>
+  </div>
+
+  <button class="primary-btn" id="generateBtn" style="width:100%;margin-top:18px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
+    Generate cards
+  </button>
+
+  <div class="gen-status" id="genStatus" hidden></div>
+
+  <div class="preview-list" id="previewList"></div>
+
+  <div class="save-row" hidden id="saveRow">
+    <button class="primary-btn" id="saveBtn" style="width:100%;background:var(--green);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      <span id="saveBtnLabel">Add words to my deck</span>
+    </button>
+  </div>
+
+  <p class="caveat-note">
+    Words added here are saved in this browser only (not written back to the shared data-account*.js files on GitHub), so they'll show up on this device right away but won't appear on your other devices or your partner's until you ask Claude to fold them into the real file next time you're chatting.
+  </p>
+
+  <details class="settings-details" id="settingsDetails">
+    <summary>⚙️ API settings</summary>
+    <div class="settings-body">
+      <div class="field-block">
+        <label class="field-label" for="apiKeyInput">Anthropic API key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+        <p class="settings-note">
+          Shared with the Practice page's settings — stored only in this browser and sent directly to Anthropic's API.
+          Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>.
+        </p>
+      </div>
+      <div class="field-block">
+        <label class="field-label" for="modelSelect">Model</label>
+        <select id="modelSelect">
+          <option value="claude-opus-5">Claude Opus 5 — best quality</option>
+          <option value="claude-sonnet-5">Claude Sonnet 5 — balanced</option>
+          <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest &amp; cheapest</option>
+        </select>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+function initApp(){
+  document.getElementById("profileLabel").textContent = window.currentAccountLabel ? window.currentAccountLabel() : "";
+  document.getElementById("switchProfileBtn").addEventListener("click", (e) => {
+    e.preventDefault();
+    if(window.switchProfile) window.switchProfile();
+  });
+
+  const accountId = window.currentAccountId ? window.currentAccountId() : null;
+
+  const KEY_STORAGE = "vocabapp_anthropic_key";
+  const MODEL_STORAGE = "vocabapp_anthropic_model";
+
+  const textInput = document.getElementById("textInput");
+  const dropzone = document.getElementById("dropzone");
+  const imageInput = document.getElementById("imageInput");
+  const imagePreview = document.getElementById("imagePreview");
+  const imagePreviewThumb = document.getElementById("imagePreviewThumb");
+  const imagePreviewName = document.getElementById("imagePreviewName");
+  const removeImageBtn = document.getElementById("removeImageBtn");
+  const generateBtn = document.getElementById("generateBtn");
+  const genStatus = document.getElementById("genStatus");
+  const previewList = document.getElementById("previewList");
+  const saveRow = document.getElementById("saveRow");
+  const saveBtn = document.getElementById("saveBtn");
+  const saveBtnLabel = document.getElementById("saveBtnLabel");
+  const apiKeyInput = document.getElementById("apiKeyInput");
+  const modelSelect = document.getElementById("modelSelect");
+  const settingsDetails = document.getElementById("settingsDetails");
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // ---------- settings (shared with Practice page) ----------
+  apiKeyInput.value = localStorage.getItem(KEY_STORAGE) || "";
+  modelSelect.value = localStorage.getItem(MODEL_STORAGE) || "claude-opus-5";
+  if(!apiKeyInput.value) settingsDetails.open = true;
+  apiKeyInput.addEventListener("change", () => {
+    try{ localStorage.setItem(KEY_STORAGE, apiKeyInput.value.trim()); }catch(e){}
+  });
+  modelSelect.addEventListener("change", () => {
+    try{ localStorage.setItem(MODEL_STORAGE, modelSelect.value); }catch(e){}
+  });
+
+  // ---------- image selection (file picker, drag&drop, clipboard paste) ----------
+  let imageFile = null; // { dataUrl, mediaType, name }
+
+  function setImageFile(file){
+    if(!file) return;
+    if(!file.type.startsWith("image/")){
+      showStatus("error", "That file isn't an image.");
+      return;
+    }
+    if(file.size > 8 * 1024 * 1024){
+      showStatus("error", "Image is too large (max 8MB). Try a smaller screenshot.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      imageFile = { dataUrl: reader.result, mediaType: file.type, name: file.name || "pasted-image" };
+      imagePreviewThumb.src = imageFile.dataUrl;
+      imagePreviewName.textContent = imageFile.name;
+      imagePreview.hidden = false;
+      dropzone.hidden = true;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropzone.addEventListener("click", () => imageInput.click());
+  imageInput.addEventListener("change", () => {
+    if(imageInput.files && imageInput.files[0]) setImageFile(imageInput.files[0]);
+  });
+  ["dragover", "dragenter"].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  });
+  ["dragleave", "drop"].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove("dragover"); });
+  });
+  dropzone.addEventListener("drop", (e) => {
+    if(e.dataTransfer.files && e.dataTransfer.files[0]) setImageFile(e.dataTransfer.files[0]);
+  });
+  document.addEventListener("paste", (e) => {
+    const items = (e.clipboardData || window.clipboardData).items || [];
+    for(const item of items){
+      if(item.type && item.type.startsWith("image/")){
+        setImageFile(item.getAsFile());
+        break;
+      }
+    }
+  });
+  removeImageBtn.addEventListener("click", () => {
+    imageFile = null;
+    imageInput.value = "";
+    imagePreview.hidden = true;
+    dropzone.hidden = false;
+  });
+
+  // ---------- generation ----------
+  let generatedCards = [];
+
+  function showStatus(kind, html){
+    genStatus.hidden = false;
+    genStatus.className = "gen-status" + (kind === "error" ? " error" : "");
+    genStatus.innerHTML = html;
+  }
+  function hideStatus(){ genStatus.hidden = true; }
+
+  function parseCardsFromResponse(raw){
+    let text = raw.trim();
+    const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+    if(fenced) text = fenced[1];
+    const parsed = JSON.parse(text);
+    if(!Array.isArray(parsed)) throw new Error("Expected a JSON array");
+    const today = new Date().toISOString().slice(0, 10);
+    return parsed.map(item => ({
+      word: String(item.word || "").trim(),
+      pos: String(item.pos || "").trim(),
+      definition: String(item.definition || "").trim(),
+      example: String(item.example || "").trim(),
+      synonyms: Array.isArray(item.synonyms) ? item.synonyms.filter(Boolean).map(String) : [],
+      dateAdded: today
+    })).filter(c => c.word && c.definition);
+  }
+
+  function renderPreview(){
+    if(generatedCards.length === 0){
+      previewList.innerHTML = "";
+      saveRow.hidden = true;
+      return;
+    }
+    previewList.innerHTML = generatedCards.map((c, i) => `
+      <div class="preview-card${c._removed ? " removed" : ""}" data-i="${i}">
+        <div class="preview-body">
+          <div class="preview-word">${escapeHtml(c.word)} <span class="pos-badge" style="margin-left:4px;">${escapeHtml(c.pos)}</span></div>
+          <div class="preview-def">${escapeHtml(c.definition)}</div>
+        </div>
+        <button type="button" class="remove-x" data-i="${i}" title="${c._removed ? "Restore" : "Remove"}">${c._removed ? "↺" : "×"}</button>
+      </div>
+    `).join("");
+    previewList.querySelectorAll(".remove-x").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const i = Number(btn.dataset.i);
+        generatedCards[i]._removed = !generatedCards[i]._removed;
+        renderPreview();
+      });
+    });
+    const keepCount = generatedCards.filter(c => !c._removed).length;
+    saveRow.hidden = keepCount === 0;
+    saveBtnLabel.textContent = `Add ${keepCount} word${keepCount === 1 ? "" : "s"} to my deck`;
+  }
+
+  async function generateCards(){
+    const apiKey = (localStorage.getItem(KEY_STORAGE) || "").trim();
+    const rawText = textInput.value.trim();
+
+    if(!apiKey){
+      settingsDetails.open = true;
+      showStatus("error", "Add your Anthropic API key in API settings below first.");
+      return;
+    }
+    if(!rawText && !imageFile){
+      showStatus("error", "Paste some text or add an image first.");
+      return;
+    }
+
+    generateBtn.disabled = true;
+    const originalLabel = generateBtn.innerHTML;
+    generateBtn.innerHTML = "Generating…";
+    showStatus("loading", `<span class="spinner"></span> Reading your word list…`);
+    previewList.innerHTML = "";
+    saveRow.hidden = true;
+    generatedCards = [];
+
+    const model = localStorage.getItem(MODEL_STORAGE) || "claude-opus-5";
+    const systemPrompt = "You convert an English tutor's raw notes (text and/or a photo/screenshot of a word list) into structured vocabulary flashcards for a B2-C1 English learner.\n"
+      + "For each distinct word or phrase you find, produce one JSON object with exactly these fields:\n"
+      + "- word: the headword or phrase in its natural form (e.g. \"to make up one's mind\", \"ambiguous\")\n"
+      + "- pos: part of speech (noun, verb, adjective, adverb, phrase, idiom, phrasal verb, verb phrase, etc.)\n"
+      + "- definition: a clear, simple English definition (not a translation)\n"
+      + "- example: one natural example sentence using the word, with the target word/phrase replaced by exactly four underscores (____)\n"
+      + "- synonyms: an array of 0-4 related words, synonyms, or forms (can be an empty array)\n"
+      + "Return ONLY a JSON array of these objects — no markdown code fences, no explanation, no extra text before or after.";
+
+    const contentBlocks = [];
+    if(imageFile){
+      const base64 = imageFile.dataUrl.split(",")[1];
+      contentBlocks.push({
+        type: "image",
+        source: { type: "base64", media_type: imageFile.mediaType, data: base64 }
+      });
+    }
+    contentBlocks.push({
+      type: "text",
+      text: rawText
+        ? `Here are my tutor's notes. Extract every word/phrase:\n\n${rawText}`
+        : "Extract every word/phrase from the attached image."
+    });
+
+    try{
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 4000,
+          system: systemPrompt,
+          messages: [{ role: "user", content: contentBlocks }]
+        })
+      });
+
+      if(!res.ok){
+        let msg = `Request failed (HTTP ${res.status}).`;
+        try{
+          const errBody = await res.json();
+          if(errBody && errBody.error && errBody.error.message) msg = errBody.error.message;
+        }catch(e){}
+        if(res.status === 401) msg = "That API key was rejected. Check it in API settings below.";
+        if(res.status === 429) msg = "Rate limited — wait a moment and try again.";
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+      generatedCards = parseCardsFromResponse(text);
+
+      if(generatedCards.length === 0){
+        showStatus("error", "Couldn't find any words in that. Try pasting clearer text or a sharper screenshot.");
+      } else {
+        showStatus("done", `Found <strong>${generatedCards.length}</strong> word${generatedCards.length === 1 ? "" : "s"}. Review below, remove any mistakes, then save.`);
+        renderPreview();
+      }
+    }catch(err){
+      showStatus("error", "Couldn't generate cards: " + (err.message || "something went wrong") + ". The model's reply may not have been valid JSON — try again.");
+    }finally{
+      generateBtn.disabled = false;
+      generateBtn.innerHTML = originalLabel;
+    }
+  }
+
+  generateBtn.addEventListener("click", generateCards);
+
+  saveBtn.addEventListener("click", () => {
+    const toSave = generatedCards.filter(c => !c._removed).map(({ _removed, ...rest }) => rest);
+    if(toSave.length === 0) return;
+    if(window.vocabAddCustomCards) window.vocabAddCustomCards(accountId, toSave);
+
+    textInput.value = "";
+    removeImageBtn.click();
+    generatedCards = [];
+    previewList.innerHTML = "";
+    saveRow.hidden = true;
+    showStatus("done", `✓ Added ${toSave.length} word${toSave.length === 1 ? "" : "s"} to your deck. <a href="index.html">Go see your cards →</a>`);
+  });
+}
+window.addEventListener("vocabdata-ready", initApp);
+</script>
+</body>
+</html>

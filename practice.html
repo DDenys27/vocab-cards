@@ -155,14 +155,18 @@
 
 <script src="accounts.js"></script>
 <script src="auth.js"></script>
+<script src="words-store.js"></script>
 
 <div class="topbar">
   <div class="topbar-inner">
     <div class="title-row">
       <h1>🗣️ Practice</h1>
+      <a class="switch-btn" href="#" id="switchProfileBtn">Switch account</a>
+    </div>
+    <div class="title-row meta-row">
+      <span class="profile-label" id="profileLabel"></span>
       <div class="stats">
-        <span class="profile-label" id="profileLabel"></span>
-        <a class="nav-link" href="#" id="switchProfileBtn">Switch</a>
+        <a class="nav-link" href="add-words.html">Add words</a>
         <a class="nav-link" href="index.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
           Cards
@@ -236,6 +240,9 @@ function initApp(){
     if(window.switchProfile) window.switchProfile();
   });
 
+  const accountId = window.currentAccountId ? window.currentAccountId() : null;
+  const DECK = window.vocabMergedDeck ? window.vocabMergedDeck(VOCAB_DATA, accountId) : VOCAB_DATA;
+
   const KEY_STORAGE = "vocabapp_anthropic_key";
   const MODEL_STORAGE = "vocabapp_anthropic_model";
 
@@ -288,19 +295,19 @@ function initApp(){
   }
 
   // ---------- word selection ----------
-  if(VOCAB_DATA.length === 0){
+  if(DECK.length === 0){
     document.querySelector(".content").innerHTML = `<div class="empty-state" style="padding:60px 20px;text-align:center;color:var(--label-tertiary);">No words in this deck yet.<br>Add some on the Cards page first.</div>`;
     return;
   }
 
-  const alphabetical = VOCAB_DATA.map((c, i) => ({ ...c, _i: i })).sort((a, b) => a.word.localeCompare(b.word));
+  const alphabetical = DECK.map((c, i) => ({ ...c, _i: i })).sort((a, b) => a.word.localeCompare(b.word));
   wordSelect.innerHTML = alphabetical.map(c => `<option value="${c._i}">${escapeHtml(c.word)}</option>`).join("");
 
-  let currentIndex = Math.floor(Math.random() * VOCAB_DATA.length);
+  let currentIndex = Math.floor(Math.random() * DECK.length);
 
   function showWord(index){
     currentIndex = index;
-    const card = VOCAB_DATA[index];
+    const card = DECK[index];
     promptPos.textContent = card.pos || "";
     promptWord.textContent = card.word;
     wordSelect.value = String(index);
@@ -316,15 +323,15 @@ function initApp(){
   }
 
   function randomWord(){
-    if(VOCAB_DATA.length <= 1){ showWord(0); return; }
+    if(DECK.length <= 1){ showWord(0); return; }
     let next;
-    do { next = Math.floor(Math.random() * VOCAB_DATA.length); } while(next === currentIndex);
+    do { next = Math.floor(Math.random() * DECK.length); } while(next === currentIndex);
     showWord(next);
   }
 
   randomBtn.addEventListener("click", randomWord);
   wordSelect.addEventListener("change", () => showWord(Number(wordSelect.value)));
-  speakBtn.addEventListener("click", () => speak(VOCAB_DATA[currentIndex].word));
+  speakBtn.addEventListener("click", () => speak(DECK[currentIndex].word));
 
   // ---------- settings ----------
   apiKeyInput.value = localStorage.getItem(KEY_STORAGE) || "";
@@ -387,7 +394,7 @@ function initApp(){
   async function checkSentence(){
     const apiKey = (localStorage.getItem(KEY_STORAGE) || "").trim();
     const sentence = sentenceInput.value.trim();
-    const card = VOCAB_DATA[currentIndex];
+    const card = DECK[currentIndex];
 
     if(!apiKey){
       settingsDetails.open = true;
