@@ -135,6 +135,28 @@
     padding:10px 6px;
     cursor:pointer;
   }
+  .edit-claude-status{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:var(--fill-tertiary);
+    font-size:0.84rem;
+    line-height:1.4;
+  }
+  .edit-claude-status[hidden]{display:none;}
+  .edit-claude-status.error{background:var(--red-tint);color:var(--red);}
+  .edit-claude-status a{color:var(--blue);}
+  .spinner{
+    width:14px;height:14px;
+    border-radius:999px;
+    border:2px solid var(--fill-secondary);
+    border-top-color:var(--label-secondary);
+    animation:spin 0.7s linear infinite;
+    display:inline-block;
+    vertical-align:middle;
+    margin-right:5px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
   .speak-btn{
     width:40px;
     height:40px;
@@ -504,6 +526,11 @@ function initApp(){
       <textarea id="editDefinitionInput" style="min-height:70px;"></textarea>
       <label class="field-label" for="editExampleInput" style="margin-top:12px;display:block;">Example (use ____ for the hidden word)</label>
       <textarea id="editExampleInput" style="min-height:70px;"></textarea>
+      <button class="util-btn" id="editAskClaudeBtn" style="margin-top:10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
+        Ask Claude to check/fix this
+      </button>
+      <div class="edit-claude-status" id="editClaudeStatus" hidden></div>
       <div class="edit-modal-actions">
         <button class="util-btn" id="editResetBtn" hidden>Reset to original</button>
         <div style="flex:1;"></div>
@@ -521,6 +548,7 @@ function initApp(){
     document.getElementById("editDefinitionInput").value = card.definition || "";
     document.getElementById("editExampleInput").value = card.example || "";
     document.getElementById("editResetBtn").hidden = !window.vocabGetOverride || !window.vocabGetOverride(accountId, card.word);
+    document.getElementById("editClaudeStatus").hidden = true;
     editModal.hidden = false;
   }
   function closeEditModal(){
@@ -529,6 +557,105 @@ function initApp(){
   }
   document.getElementById("editCancelBtn").addEventListener("click", closeEditModal);
   editModal.addEventListener("click", (e) => { if(e.target === editModal) closeEditModal(); });
+
+  // ---------- ask Claude to check/fix the definition & example ----------
+  const EDIT_KEY_STORAGE = "vocabapp_anthropic_key";
+  const EDIT_MODEL_STORAGE = "vocabapp_anthropic_model";
+  const editClaudeStatus = document.getElementById("editClaudeStatus");
+  const editAskClaudeBtn = document.getElementById("editAskClaudeBtn");
+
+  function showEditClaudeStatus(kind, html){
+    editClaudeStatus.hidden = false;
+    editClaudeStatus.className = "edit-claude-status" + (kind === "error" ? " error" : "");
+    editClaudeStatus.innerHTML = html;
+  }
+
+  function parseFixResponse(raw){
+    const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+    let definition = null, example = null, notes = [];
+    let mode = null;
+    for(const line of lines){
+      if(/^DEFINITION:/i.test(line)){ definition = line.replace(/^DEFINITION:/i, "").trim(); mode = null; }
+      else if(/^EXAMPLE:/i.test(line)){ example = line.replace(/^EXAMPLE:/i, "").trim(); mode = null; }
+      else if(/^NOTES:/i.test(line)){ notes.push(line.replace(/^NOTES:/i, "").trim()); mode = "notes"; }
+      else if(mode === "notes"){ notes.push(line); }
+    }
+    return { definition, example, notes: notes.join(" ") };
+  }
+
+  editAskClaudeBtn.addEventListener("click", async () => {
+    const apiKey = (localStorage.getItem(EDIT_KEY_STORAGE) || "").trim();
+    if(!apiKey){
+      showEditClaudeStatus("error", `No Anthropic API key set yet. Add one under "API settings" on the <a href="practice.html">Practice</a> or <a href="add-words.html">Add words</a> page first — it's shared across the app.`);
+      return;
+    }
+    if(!editingWord) return;
+
+    const word = editingWord;
+    const card = findDeckCard(word) || {};
+    const pos = card.pos || "";
+    const definition = document.getElementById("editDefinitionInput").value.trim();
+    const example = document.getElementById("editExampleInput").value.trim();
+
+    editAskClaudeBtn.disabled = true;
+    const originalLabel = editAskClaudeBtn.innerHTML;
+    editAskClaudeBtn.innerHTML = "Checking…";
+    showEditClaudeStatus("loading", `<span class="spinner"></span> Asking Claude…`);
+
+    const model = localStorage.getItem(EDIT_MODEL_STORAGE) || "claude-opus-5";
+    const systemPrompt = "You proofread one vocabulary flashcard (definition + example sentence) for an English learner and fix any mistake you find — grammar, clarity, factual accuracy, or the example not matching the word.\n"
+      + "CRITICAL: the example's blank (____) is replaced with the headword text EXACTLY AS GIVEN below when shown to the learner — nothing else is inserted. So the surrounding sentence must already be grammatically correct once that exact text is substituted in. Common mistakes to check for: a redundant \"to\" right before the blank when the headword already starts with \"to\", a redundant article (\"a\"/\"an\") right before the blank when the headword already starts with one, and a verb tense/form that doesn't match the headword's exact form (the headword is not re-conjugated).\n"
+      + "If everything is already correct, return it unchanged and say so in NOTES.\n"
+      + "Respond in exactly this format, three lines, nothing else:\n"
+      + "DEFINITION: the corrected definition\n"
+      + "EXAMPLE: the corrected example sentence, still containing ____ for the blank\n"
+      + "NOTES: one short sentence on what you changed, or \"No changes needed.\"";
+
+    const userMsg = `Word/phrase: "${word}" (${pos})\nCurrent definition: ${definition}\nCurrent example: ${example}`;
+
+    try{
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 500,
+          output_config: { effort: "low" },
+          system: systemPrompt,
+          messages: [{ role: "user", content: userMsg }]
+        })
+      });
+
+      if(!res.ok){
+        let msg = `Request failed (HTTP ${res.status}).`;
+        try{
+          const errBody = await res.json();
+          if(errBody && errBody.error && errBody.error.message) msg = errBody.error.message;
+        }catch(e){}
+        if(res.status === 401) msg = "That API key was rejected. Check it under API settings on the Practice or Add words page.";
+        if(res.status === 429) msg = "Rate limited — wait a moment and try again.";
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+      const parsed = parseFixResponse(text);
+
+      if(parsed.definition) document.getElementById("editDefinitionInput").value = parsed.definition;
+      if(parsed.example) document.getElementById("editExampleInput").value = parsed.example;
+      showEditClaudeStatus("done", (parsed.notes ? escapeHtml(parsed.notes) : "Reviewed.") + " Review below, then click Save.");
+    }catch(err){
+      showEditClaudeStatus("error", "Couldn't reach Claude: " + escapeHtml(err.message || "something went wrong"));
+    }finally{
+      editAskClaudeBtn.disabled = false;
+      editAskClaudeBtn.innerHTML = originalLabel;
+    }
+  });
   // DECK/sortedForTable are built once at load, so an edit has to mutate the
   // live card object in place (both arrays hold the same references) rather
   // than relying on a re-fetch to pick up the localStorage change.
