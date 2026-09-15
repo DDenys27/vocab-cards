@@ -152,6 +152,48 @@
   .edit-claude-status[hidden]{display:none;}
   .edit-claude-status.error{background:var(--red-tint);color:var(--red);}
   .edit-claude-status a{color:var(--blue);}
+  .edit-chat-panel{
+    margin-top:12px;
+    border-top:0.5px solid var(--hairline-soft);
+    padding-top:12px;
+  }
+  .edit-chat-panel[hidden]{display:none;}
+  .edit-chat-messages{
+    max-height:240px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:10px;
+    padding-right:2px;
+  }
+  .chat-msg{
+    max-width:85%;
+    padding:8px 12px;
+    border-radius:14px;
+    font-size:0.86rem;
+    line-height:1.4;
+    white-space:pre-wrap;
+  }
+  .chat-msg.user{
+    align-self:flex-end;
+    background:var(--blue);
+    color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .chat-msg.assistant{
+    align-self:flex-start;
+    background:var(--fill-tertiary);
+    color:var(--label);
+    border-bottom-left-radius:4px;
+  }
+  .chat-msg.loading{color:var(--label-tertiary);}
+  .edit-chat-input-row{
+    display:flex;
+    gap:8px;
+    align-items:flex-end;
+  }
+  .edit-chat-input-row textarea{min-height:38px;max-height:100px;}
   .spinner{
     width:14px;height:14px;
     border-radius:999px;
@@ -537,12 +579,19 @@ function initApp(){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
           Ask Claude to fix this
         </button>
-        <button class="util-btn" id="editCopyForChatBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h11a1 1 0 0 1 1 1v13"/><path d="M5 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/></svg>
-          Explain in Claude Code chat
+        <button class="util-btn" id="editChatToggleBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Discuss with Claude
         </button>
       </div>
       <div class="edit-claude-status" id="editClaudeStatus" hidden></div>
+      <div class="edit-chat-panel" id="editChatPanel" hidden>
+        <div class="edit-chat-messages" id="editChatMessages"></div>
+        <div class="edit-chat-input-row">
+          <textarea id="editChatInput" placeholder="Ask about this word…" rows="1"></textarea>
+          <button class="primary-btn" id="editChatSendBtn" style="flex:0 0 auto;padding:0 16px;">Send</button>
+        </div>
+      </div>
       <div class="edit-modal-actions">
         <button class="util-btn" id="editResetBtn" hidden>Reset to original</button>
         <div style="flex:1;"></div>
@@ -561,6 +610,7 @@ function initApp(){
     document.getElementById("editExampleInput").value = card.example || "";
     document.getElementById("editResetBtn").hidden = !window.vocabGetOverride || !window.vocabGetOverride(accountId, card.word);
     document.getElementById("editClaudeStatus").hidden = true;
+    resetChat();
     editModal.hidden = false;
   }
   function closeEditModal(){
@@ -595,36 +645,123 @@ function initApp(){
     return { definition, example, notes: notes.join(" ") };
   }
 
-  // ---------- copy card details for a deeper discussion in Claude Code chat ----------
-  // (the in-app "Ask Claude" call only has room to return a quick fix, not an
-  // explanation — for that, hand the card off to the actual chat session.)
-  function copyTextToClipboard(text){
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      return navigator.clipboard.writeText(text);
-    }
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    try{ document.execCommand("copy"); }catch(e){}
-    document.body.removeChild(ta);
-    return Promise.resolve();
+  // ---------- discuss the card directly with Claude, in-app ----------
+  const editChatPanel = document.getElementById("editChatPanel");
+  const editChatMessages = document.getElementById("editChatMessages");
+  const editChatInput = document.getElementById("editChatInput");
+  const editChatSendBtn = document.getElementById("editChatSendBtn");
+  const editChatToggleBtn = document.getElementById("editChatToggleBtn");
+  let chatHistory = []; // [{role, content}], Anthropic message format
+  let chatWord = null;
+  let chatBusy = false;
+
+  function renderChatMessages(){
+    editChatMessages.innerHTML = chatHistory.map(m =>
+      `<div class="chat-msg ${m.role === "user" ? "user" : "assistant"}">${escapeHtml(m.content)}</div>`
+    ).join("");
+    editChatMessages.scrollTop = editChatMessages.scrollHeight;
   }
 
-  document.getElementById("editCopyForChatBtn").addEventListener("click", async () => {
-    if(!editingWord) return;
+  function resetChat(){
+    chatHistory = [];
+    chatWord = null;
+    editChatPanel.hidden = true;
+    editChatMessages.innerHTML = "";
+    editChatInput.value = "";
+  }
+
+  async function sendChatTurn(userText){
+    const apiKey = (localStorage.getItem(EDIT_KEY_STORAGE) || "").trim();
+    if(!apiKey){
+      showEditClaudeStatus("error", `No Anthropic API key set yet. Add one under "API settings" on the <a href="practice.html">Practice</a> or <a href="add-words.html">Add words</a> page first — it's shared across the app.`);
+      return;
+    }
+    if(!editingWord || chatBusy) return;
+
+    chatHistory.push({ role: "user", content: userText });
+    renderChatMessages();
+    editChatInput.value = "";
+    chatBusy = true;
+    editChatSendBtn.disabled = true;
+    editChatMessages.insertAdjacentHTML("beforeend", `<div class="chat-msg assistant loading" id="chatLoadingMsg"><span class="spinner"></span>Thinking…</div>`);
+    editChatMessages.scrollTop = editChatMessages.scrollHeight;
+
     const card = findDeckCard(editingWord) || {};
-    const definition = document.getElementById("editDefinitionInput").value.trim();
-    const example = document.getElementById("editExampleInput").value.trim();
-    const synonymsLine = (card.synonyms && card.synonyms.length) ? `\nSynonyms: ${card.synonyms.join(", ")}` : "";
-    const text = `Card: "${editingWord}" (${card.pos || ""})\nDefinition: ${definition}\nExample: ${example}${synonymsLine}\n\nI think there's a mistake in this card — can you check it and explain what's wrong?`;
+    const model = localStorage.getItem(EDIT_MODEL_STORAGE) || "claude-opus-5";
+    const systemPrompt = "You're discussing one vocabulary flashcard with the English learner who owns it, in a short chat. "
+      + `The card: word/phrase "${editingWord}" (${card.pos || ""}), definition "${card.definition || ""}", example "${card.example || ""}"`
+      + (card.synonyms && card.synonyms.length ? `, synonyms: ${card.synonyms.join(", ")}` : "") + ".\n"
+      + "Help them figure out if there's a mistake and explain clearly why (or why not). Keep replies short and conversational (2-4 sentences unless they ask for more detail). "
+      + "If you suggest a corrected definition or example, write them out plainly labeled (e.g. \"Definition: ...\" / \"Example: ...\") so they can copy them into the fields themselves — you cannot edit the card directly.";
+
     try{
-      await copyTextToClipboard(text);
-      showEditClaudeStatus("done", "Copied! Paste it into your Claude Code chat to get an explanation.");
-    }catch(e){
-      showEditClaudeStatus("error", "Couldn't copy to clipboard. Select and copy this yourself:<br><br>" + escapeHtml(text).replace(/\n/g, "<br>"));
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 600,
+          output_config: { effort: "low" },
+          system: systemPrompt,
+          messages: chatHistory
+        })
+      });
+
+      if(!res.ok){
+        let msg = `Request failed (HTTP ${res.status}).`;
+        try{
+          const errBody = await res.json();
+          if(errBody && errBody.error && errBody.error.message) msg = errBody.error.message;
+        }catch(e){}
+        if(res.status === 401) msg = "That API key was rejected. Check it under API settings on the Practice or Add words page.";
+        if(res.status === 429) msg = "Rate limited — wait a moment and try again.";
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+      chatHistory.push({ role: "assistant", content: text || "(no reply)" });
+    }catch(err){
+      chatHistory.push({ role: "assistant", content: "⚠️ " + (err.message || "Something went wrong reaching Claude.") });
+    }finally{
+      chatBusy = false;
+      editChatSendBtn.disabled = false;
+      const loadingEl = document.getElementById("chatLoadingMsg");
+      if(loadingEl) loadingEl.remove();
+      renderChatMessages();
+    }
+  }
+
+  editChatToggleBtn.addEventListener("click", () => {
+    if(!editingWord) return;
+    if(editChatPanel.hidden){
+      editChatPanel.hidden = false;
+      if(chatWord !== editingWord){
+        chatHistory = [];
+        chatWord = editingWord;
+        renderChatMessages();
+        sendChatTurn("I think there might be a mistake in this card — can you check it and explain?");
+      }
+      editChatInput.focus();
+    } else {
+      editChatPanel.hidden = true;
+    }
+  });
+
+  editChatSendBtn.addEventListener("click", () => {
+    const text = editChatInput.value.trim();
+    if(text) sendChatTurn(text);
+  });
+  editChatInput.addEventListener("keydown", (e) => {
+    if(e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      const text = editChatInput.value.trim();
+      if(text) sendChatTurn(text);
     }
   });
 
