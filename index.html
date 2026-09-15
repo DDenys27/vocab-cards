@@ -1230,6 +1230,8 @@ function initApp(){
   });
 
   document.addEventListener("keydown", (e) => {
+    const tag = (e.target && e.target.tagName || "").toLowerCase();
+    if(tag === "input" || tag === "textarea" || tag === "select" || (e.target && e.target.isContentEditable)) return;
     if(e.code === "Space"){ e.preventDefault(); flip(); }
     else if(e.code === "ArrowRight"){ goNext(); }
     else if(e.code === "ArrowLeft"){ goPrev(); }
