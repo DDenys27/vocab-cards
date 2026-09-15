@@ -14,7 +14,9 @@ Open `index.html` in a browser (double-click locally, or visit the published URL
 - Mark each card "Known ✓" or "Still learning" — progress is saved per browser (localStorage).
 - Filter by status and by topic (All / Career / ...); shuffle the deck anytime.
 - Click the pin icon (on the card or in the word table) to pin a word — it shows up under the "📌 Pinned" filter *in addition to* its normal topic, without leaving that topic. Pins are saved per browser (localStorage), separate from progress.
-- Click the pencil icon (on the card back, or in the word table) to rewrite a word's definition and example yourself — works for both seed words and self-added ones, no Claude Code needed. "Reset to original" reverts it. Saved per browser (localStorage), same as pins/progress. Inside that editor, **"Ask Claude to check/fix this"** sends your current text to Claude to catch mistakes (grammar, clarity, or the example not matching the word) — it fills in a suggested fix for you to review before saving; uses the same API key as Practice/Add words.
+- Click the pencil icon (on the card back, or in the word table) to rewrite a word's definition and example yourself — works for both seed words and self-added ones, no Claude Code needed. "Reset to original" reverts it. Saved per browser (localStorage), same as pins/progress. Inside that editor:
+  - **"Ask Claude to fix this"** sends your current text to Claude (via the API) to catch mistakes and fills in a suggested fix for you to review before saving; uses the same API key as Practice/Add words.
+  - **"Explain in Claude Code chat"** copies the word/definition/example/synonyms plus a prompt to your clipboard, for when you want a real explanation of what's wrong rather than just a quick fix — paste it into your Claude Code chat.
 - Scroll down for a searchable table of every word in your deck.
 - Use **Practice** in the top bar to write your own sentences and have Claude check them.
 - Use **Add words** in the top bar to add new words yourself, no Claude Code needed (see below).

@@ -135,6 +135,12 @@
     padding:10px 6px;
     cursor:pointer;
   }
+  .edit-btn-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 16px;
+    margin-top:10px;
+  }
   .edit-claude-status{
     margin-top:10px;
     padding:10px 12px;
@@ -526,10 +532,16 @@ function initApp(){
       <textarea id="editDefinitionInput" style="min-height:70px;"></textarea>
       <label class="field-label" for="editExampleInput" style="margin-top:12px;display:block;">Example (use ____ for the hidden word)</label>
       <textarea id="editExampleInput" style="min-height:70px;"></textarea>
-      <button class="util-btn" id="editAskClaudeBtn" style="margin-top:10px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
-        Ask Claude to check/fix this
-      </button>
+      <div class="edit-btn-row">
+        <button class="util-btn" id="editAskClaudeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
+          Ask Claude to fix this
+        </button>
+        <button class="util-btn" id="editCopyForChatBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h11a1 1 0 0 1 1 1v13"/><path d="M5 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/></svg>
+          Explain in Claude Code chat
+        </button>
+      </div>
       <div class="edit-claude-status" id="editClaudeStatus" hidden></div>
       <div class="edit-modal-actions">
         <button class="util-btn" id="editResetBtn" hidden>Reset to original</button>
@@ -582,6 +594,39 @@ function initApp(){
     }
     return { definition, example, notes: notes.join(" ") };
   }
+
+  // ---------- copy card details for a deeper discussion in Claude Code chat ----------
+  // (the in-app "Ask Claude" call only has room to return a quick fix, not an
+  // explanation — for that, hand the card off to the actual chat session.)
+  function copyTextToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text);
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+    return Promise.resolve();
+  }
+
+  document.getElementById("editCopyForChatBtn").addEventListener("click", async () => {
+    if(!editingWord) return;
+    const card = findDeckCard(editingWord) || {};
+    const definition = document.getElementById("editDefinitionInput").value.trim();
+    const example = document.getElementById("editExampleInput").value.trim();
+    const synonymsLine = (card.synonyms && card.synonyms.length) ? `\nSynonyms: ${card.synonyms.join(", ")}` : "";
+    const text = `Card: "${editingWord}" (${card.pos || ""})\nDefinition: ${definition}\nExample: ${example}${synonymsLine}\n\nI think there's a mistake in this card — can you check it and explain what's wrong?`;
+    try{
+      await copyTextToClipboard(text);
+      showEditClaudeStatus("done", "Copied! Paste it into your Claude Code chat to get an explanation.");
+    }catch(e){
+      showEditClaudeStatus("error", "Couldn't copy to clipboard. Select and copy this yourself:<br><br>" + escapeHtml(text).replace(/\n/g, "<br>"));
+    }
+  });
 
   editAskClaudeBtn.addEventListener("click", async () => {
     const apiKey = (localStorage.getItem(EDIT_KEY_STORAGE) || "").trim();
