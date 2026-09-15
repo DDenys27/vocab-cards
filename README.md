@@ -12,7 +12,7 @@ Open `index.html` in a browser (double-click locally, or visit the published URL
 - On the back, click the underlined blank in the example sentence to reveal the hidden word.
 - Click the speaker icon (or press **P**) to hear the word pronounced.
 - Mark each card "Known ✓" or "Still learning" — progress is saved per browser (localStorage).
-- Filter by status and by topic (All / Career / ...); shuffle the deck anytime.
+- Filter by status, by topic, and by the date a word was added — all three as dropdowns, combinable; shuffle the deck anytime.
 - Click the pin icon (on the card or in the word table) to pin a word — it shows up under the "📌 Pinned" filter *in addition to* its normal topic, without leaving that topic. Pins are saved per browser (localStorage), separate from progress.
 - Click the pencil icon (on the card back, or in the word table) to rewrite a word's definition and example yourself — works for both seed words and self-added ones, no Claude Code needed. "Reset to original" reverts it. Saved per browser (localStorage), same as pins/progress. Inside that editor:
   - **"Ask Claude to fix this"** sends your current text to Claude (via the API) to catch mistakes and fills in a suggested fix for you to review before saving; uses the same API key as Practice/Add words.

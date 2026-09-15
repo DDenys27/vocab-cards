@@ -57,6 +57,19 @@
     padding:4px 10px;
     border-radius:999px;
   }
+  .filter-select-row{
+    display:flex;
+    gap:8px;
+  }
+  .filter-select-row select{
+    flex:1;
+    width:auto;
+    min-width:0;
+    padding:8px 10px;
+    font-size:0.82rem;
+    font-weight:600;
+    border-radius:10px;
+  }
   .pin-btn{
     width:24px;
     height:24px;
@@ -457,7 +470,10 @@
       <button data-value="learning">Learning</button>
       <button data-value="known">Known</button>
     </div>
-    <div class="date-row" id="topicRow"></div>
+    <div class="filter-select-row">
+      <select id="topicSelect"></select>
+      <select id="dateAddedSelect"></select>
+    </div>
   </div>
 </div>
 
@@ -909,6 +925,7 @@ function initApp(){
   let order = DECK.map((_, i) => i);
   let statusFilter = "all";
   let topicFilter = "all";
+  let dateFilter = "all";
   let pos = 0;
   let flipped = false;
 
@@ -919,26 +936,47 @@ function initApp(){
   const knownCountEl = document.getElementById("knownCount");
   const statusSegmented = document.getElementById("statusSegmented");
   const statusThumb = document.getElementById("statusThumb");
-  const topicRow = document.getElementById("topicRow");
+  const topicSelect = document.getElementById("topicSelect");
+  const dateAddedSelect = document.getElementById("dateAddedSelect");
 
   const uniqueTopics = Array.from(new Set(DECK.map(c => c.topic).filter(Boolean))).sort();
+  const uniqueDates = Array.from(new Set(DECK.map(c => c.dateAdded).filter(Boolean))).sort().reverse();
 
-  function buildTopicChips(){
-    const chips = [{ value: "all", label: "All" }, { value: "pinned", label: "📌 Pinned" }]
-      .concat(uniqueTopics.map(t => ({ value: t, label: t })));
-    topicRow.innerHTML = chips.map(c =>
-      `<button class="chip-btn${c.value === topicFilter ? " active" : ""}" data-value="${escapeHtml(c.value)}">${escapeHtml(c.label)}</button>`
-    ).join("");
-    topicRow.querySelectorAll(".chip-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        topicFilter = btn.dataset.value;
-        pos = 0;
-        flipped = false;
-        buildTopicChips();
-        render();
-      });
-    });
+  function formatDateAdded(iso){
+    if(!iso) return iso;
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   }
+
+  function buildTopicSelect(){
+    const options = [{ value: "all", label: "All topics" }, { value: "pinned", label: "📌 Pinned" }]
+      .concat(uniqueTopics.map(t => ({ value: t, label: t })));
+    topicSelect.innerHTML = options.map(o =>
+      `<option value="${escapeHtml(o.value)}"${o.value === topicFilter ? " selected" : ""}>${escapeHtml(o.label)}</option>`
+    ).join("");
+  }
+
+  function buildDateAddedSelect(){
+    const options = [{ value: "all", label: "All dates added" }]
+      .concat(uniqueDates.map(d => ({ value: d, label: formatDateAdded(d) })));
+    dateAddedSelect.innerHTML = options.map(o =>
+      `<option value="${escapeHtml(o.value)}"${o.value === dateFilter ? " selected" : ""}>${escapeHtml(o.label)}</option>`
+    ).join("");
+  }
+
+  topicSelect.addEventListener("change", () => {
+    topicFilter = topicSelect.value;
+    pos = 0;
+    flipped = false;
+    render();
+  });
+  dateAddedSelect.addEventListener("change", () => {
+    dateFilter = dateAddedSelect.value;
+    pos = 0;
+    flipped = false;
+    render();
+  });
 
   function moveStatusThumb(){
     const buttons = Array.from(statusSegmented.querySelectorAll("button"));
@@ -960,6 +998,7 @@ function initApp(){
       } else if(topicFilter !== "all" && card.topic !== topicFilter){
         return false;
       }
+      if(dateFilter !== "all" && card.dateAdded !== dateFilter) return false;
       return true;
     });
   }
@@ -1243,7 +1282,8 @@ function initApp(){
     }
   });
 
-  buildTopicChips();
+  buildTopicSelect();
+  buildDateAddedSelect();
   moveStatusThumb();
   render();
   renderTable();
