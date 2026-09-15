@@ -94,6 +94,47 @@
     color:var(--blue);
     margin-bottom:2px;
   }
+
+  /* ---------- edit definition/example modal ---------- */
+  #editModal{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:rgba(0,0,0,0.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  #editModal[hidden]{display:none;}
+  .edit-modal-card{
+    width:100%;
+    max-width:420px;
+    background:var(--card-bg);
+    border-radius:22px;
+    box-shadow:var(--shadow);
+    padding:24px;
+  }
+  .edit-modal-word{
+    font-size:1.05rem;
+    font-weight:700;
+    margin-bottom:14px;
+  }
+  .edit-modal-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:16px;
+  }
+  .edit-cancel-btn{
+    background:none;
+    border:none;
+    color:var(--label-secondary);
+    font-weight:600;
+    font-size:0.9rem;
+    padding:10px 6px;
+    cursor:pointer;
+  }
   .speak-btn{
     width:40px;
     height:40px;
@@ -450,6 +491,78 @@ function initApp(){
     return `<svg viewBox="0 0 24 24" fill="${pinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5" fill="${pinned ? "var(--card-bg)" : "none"}"/></svg>`;
   }
 
+  const editIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l3.5-1 10-10a1.7 1.7 0 0 0-2.5-2.5l-10 10L4 20z"/><path d="M13 6.5L16.5 10"/></svg>`;
+
+  // ---------- edit definition/example modal ----------
+  const editModal = document.createElement("div");
+  editModal.id = "editModal";
+  editModal.hidden = true;
+  editModal.innerHTML = `
+    <div class="edit-modal-card">
+      <div class="edit-modal-word" id="editModalWord"></div>
+      <label class="field-label" for="editDefinitionInput">Definition</label>
+      <textarea id="editDefinitionInput" style="min-height:70px;"></textarea>
+      <label class="field-label" for="editExampleInput" style="margin-top:12px;display:block;">Example (use ____ for the hidden word)</label>
+      <textarea id="editExampleInput" style="min-height:70px;"></textarea>
+      <div class="edit-modal-actions">
+        <button class="util-btn" id="editResetBtn" hidden>Reset to original</button>
+        <div style="flex:1;"></div>
+        <button class="edit-cancel-btn" id="editCancelBtn" title="Cancel">Cancel</button>
+        <button class="primary-btn" id="editSaveBtn" style="flex:0 0 auto;padding:0 20px;">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(editModal);
+
+  let editingWord = null;
+  function openEditModal(card){
+    editingWord = card.word;
+    document.getElementById("editModalWord").textContent = card.word;
+    document.getElementById("editDefinitionInput").value = card.definition || "";
+    document.getElementById("editExampleInput").value = card.example || "";
+    document.getElementById("editResetBtn").hidden = !window.vocabGetOverride || !window.vocabGetOverride(accountId, card.word);
+    editModal.hidden = false;
+  }
+  function closeEditModal(){
+    editModal.hidden = true;
+    editingWord = null;
+  }
+  document.getElementById("editCancelBtn").addEventListener("click", closeEditModal);
+  editModal.addEventListener("click", (e) => { if(e.target === editModal) closeEditModal(); });
+  // DECK/sortedForTable are built once at load, so an edit has to mutate the
+  // live card object in place (both arrays hold the same references) rather
+  // than relying on a re-fetch to pick up the localStorage change.
+  function findDeckCard(word){
+    return DECK.find(c => c.word === word);
+  }
+  function originalFields(word){
+    const seedAndCustom = VOCAB_DATA.concat(window.vocabGetCustomCards ? window.vocabGetCustomCards(accountId) : []);
+    const found = seedAndCustom.find(c => c.word === word);
+    return found ? { definition: found.definition, example: found.example } : null;
+  }
+
+  document.getElementById("editSaveBtn").addEventListener("click", () => {
+    if(!editingWord) return;
+    const definition = document.getElementById("editDefinitionInput").value.trim();
+    const example = document.getElementById("editExampleInput").value.trim();
+    if(window.vocabSetOverride) window.vocabSetOverride(accountId, editingWord, { definition, example });
+    const cardObj = findDeckCard(editingWord);
+    if(cardObj){ cardObj.definition = definition; cardObj.example = example; }
+    closeEditModal();
+    render();
+    renderTable();
+  });
+  document.getElementById("editResetBtn").addEventListener("click", () => {
+    if(!editingWord) return;
+    if(window.vocabClearOverride) window.vocabClearOverride(accountId, editingWord);
+    const original = originalFields(editingWord);
+    const cardObj = findDeckCard(editingWord);
+    if(cardObj && original){ cardObj.definition = original.definition; cardObj.example = original.example; }
+    closeEditModal();
+    render();
+    renderTable();
+  });
+
   const speechSupported = "speechSynthesis" in window;
   let englishVoice = null;
   function pickVoice(){
@@ -618,6 +731,7 @@ function initApp(){
       <div class="word-small-row">
         <div class="word-small">${escapeHtml(card.word)} <span class="pos-inline">— ${escapeHtml(card.pos || "")}</span></div>
         <button class="speak-btn small" id="speakBackBtn" title="Pronounce (P)">${speakerIcon}</button>
+        <button class="speak-btn small" id="editBackBtn" title="Edit definition/example">${editIcon}</button>
       </div>
       <div class="group">
         <div class="row">
@@ -664,6 +778,14 @@ function initApp(){
         render();
       });
     }
+
+    const editBtn = faceBack.querySelector("#editBackBtn");
+    if(editBtn){
+      editBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openEditModal(card);
+      });
+    }
   }
 
   function fillExample(example, word){
@@ -674,8 +796,10 @@ function initApp(){
   const tableBody = document.getElementById("tableBody");
   const tableCount = document.getElementById("tableCount");
   const tableSearch = document.getElementById("tableSearch");
+  // Same object references as DECK (not copies) — mutating a card's fields
+  // (e.g. saving an edit) shows up here too without rebuilding either array.
   const sortedForTable = DECK
-    .map((c, i) => ({ ...c, _i: i }))
+    .slice()
     .sort((a, b) => (a.topic || "").localeCompare(b.topic || "") || a.word.localeCompare(b.word));
 
   function renderTable(){
@@ -706,6 +830,7 @@ function initApp(){
             <div style="display:flex;align-items:center;gap:6px;">
               ${escapeHtml(c.word)}
               <button class="pin-btn table-pin-btn${pinned ? " pinned" : ""}" data-word="${escapeHtml(c.word)}" title="${pinned ? "Unpin" : "Pin"}">${pinIcon(pinned)}</button>
+              <button class="pin-btn table-edit-btn" data-word="${escapeHtml(c.word)}" title="Edit definition/example">${editIcon}</button>
             </div>
             <div class="table-topic">${escapeHtml(c.topic || "")}</div>
           </td>
@@ -725,6 +850,12 @@ function initApp(){
         if(window.vocabTogglePinned) window.vocabTogglePinned(accountId, btn.dataset.word);
         renderTable();
         render();
+      });
+    });
+    tableBody.querySelectorAll(".table-edit-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const card = DECK.find(c => c.word === btn.dataset.word);
+        if(card) openEditModal(card);
       });
     });
   }

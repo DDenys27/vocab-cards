@@ -255,6 +255,7 @@ h1{
   cursor:pointer;
   padding:6px;
 }
+.util-btn[hidden]{display:none;}
 .util-btn svg{width:15px;height:15px;}
 
 button:active{transform:scale(0.96);}
